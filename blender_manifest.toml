@@ -1,0 +1,11 @@
+schema_version = "1.0.0"
+
+id = "synthetic_data_generator"
+version = "0.1.0"
+name = "Synthetic Data Generator"
+tagline = "Randomize scenes and render labeled datasets"
+maintainer = "Sarthak Taunk <sarthaktaunk.14@gmail.com>"
+type = "add-on"
+
+blender_version_min = "5.2.0"
+license = ["SPDX:GPL-3.0-or-later"]
