@@ -218,3 +218,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Blender
+*.blend1
+*.blend@
+
+# Build output and generated data
+*.zip
+synthetic_data/
