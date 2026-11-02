@@ -1,9 +1,9 @@
 import bpy # type: ignore
 from bpy.props import PointerProperty # type: ignore
 
-from . import properties, panels
+from . import properties, operators, panels
 
-classes = properties.classes + panels.classes
+classes = properties.classes + operators.classes + panels.classes
 
 def register():
     for cls in classes:

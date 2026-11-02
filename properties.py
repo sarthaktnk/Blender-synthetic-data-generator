@@ -1,8 +1,19 @@
 import bpy # type: ignore
-from bpy.props import BoolProperty, FloatProperty, PointerProperty # type: ignore
+from bpy.props import (
+    BoolProperty, FloatProperty, PointerProperty, CollectionProperty, IntProperty, StringProperty,
+ ) # type: ignore
 
 def poll_camera(self, obj):
     return obj.type == 'CAMERA'
+
+class SDG_ClassEntry(bpy.types.PropertyGroup):
+
+    name: StringProperty(name="Class", default="class")
+    class_id: IntProperty(name="ID", default=0, min=0)
+    collection: PointerProperty(type=bpy.types.Collection)
+    count_min: IntProperty(name="Min", default=1, min=0)
+    count_max: IntProperty(name="Max", default=3, min=0)
+
 
 class SDG_Settings(bpy.types.PropertyGroup):
 
@@ -35,6 +46,11 @@ class SDG_Settings(bpy.types.PropertyGroup):
         description="Randomize where the subjects are placed",
     ) # type: ignore
 
+    class_list: CollectionProperty(type=SDG_ClassEntry)
+
+    class_index: IntProperty(default=0)
+
 classes = (
+    SDG_ClassEntry,
     SDG_Settings,
 )
