@@ -30,6 +30,11 @@ class SDG_PT_setup(SDG_PanelBase, bpy.types.Panel):
             rows=3,
         )
         layout.operator("sdg.refresh_classes", icon='FILE_REFRESH')
+        if settings.class_list:
+            entry = settings.class_list[settings.class_index]
+            row = layout.row(align=True)
+            row.prop(entry, "count_min")
+            row.prop(entry, "count_max")
 
 class SDG_PT_placement(SDG_PanelBase, bpy.types.Panel):
     bl_label = "Object Placement"

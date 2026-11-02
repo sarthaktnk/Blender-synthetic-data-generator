@@ -49,6 +49,7 @@ class SDG_Settings(bpy.types.PropertyGroup):
     class_list: CollectionProperty(type=SDG_ClassEntry)
 
     class_index: IntProperty(default=0)
+    next_class_id: IntProperty(default=0)
 
 classes = (
     SDG_ClassEntry,
