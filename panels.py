@@ -1,4 +1,5 @@
 import bpy
+from .checks import get_problems
 
 class SDG_UL_classes(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
@@ -56,8 +57,27 @@ class SDG_PT_placement(SDG_PanelBase, bpy.types.Panel):
         layout.active = settings.use_placement
         layout.prop(settings, "pos_range")
 
+
+class SDG_PT_run(SDG_PanelBase, bpy.types.Panel):
+    bl_label = "Run"
+    bl_idname = "SDG_PT_run"
+
+    def draw(self, context):
+        layout = self.layout
+        blocking, warnings = get_problems(context.scene.sdg_settings)
+
+        for message in blocking:
+            layout.label(text=message, icon='ERROR')
+        for message in warnings:
+            layout.label(text=message, icon='INFO')
+
+        row = layout.row()
+        row.scale_y = 1.8
+        row.operator("sdg.generate", icon='RENDER_ANIMATION')
+
 classes = (
     SDG_UL_classes,
     SDG_PT_setup,
     SDG_PT_placement,
+    SDG_PT_run,
 )

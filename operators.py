@@ -1,5 +1,6 @@
 import bpy
 from .class_list import refresh_classes
+from .checks import get_problems
 
 class SDG_OT_refresh_classes(bpy.types.Operator):
     bl_idname = "sdg.refresh_classes"
@@ -18,7 +19,25 @@ class SDG_OT_refresh_classes(bpy.types.Operator):
         self.report({'INFO'}, f"{added} added, {removed} removed")
         return {'FINISHED'}
 
+class SDG_OT_generate(bpy.types.Operator):
+    bl_idname = "sdg.generate"
+    bl_label = "Generate Dataset"
+    bl_description = "Render the dataset"
+
+    @classmethod
+    def poll(cls, context):
+        blocking, warnings =  get_problems(context.scene.sdg_settings)
+        if blocking:
+            cls.poll_message_set(blocking[0])
+            return False
+        return True
+
+    def execute(self, context):
+        self.report({'INFO'}, "Generate isn't built yet, but the button works")
+        return {'FINISHED'}
+
 
 classes = (
     SDG_OT_refresh_classes,
+    SDG_OT_generate,
 )
