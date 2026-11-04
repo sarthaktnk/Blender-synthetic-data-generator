@@ -3,7 +3,10 @@ import bpy
 class SDG_UL_classes(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         row = layout.row(align=True)
-        row.label(text=item.name, icon='OUTLINER_COLLECTION')
+        count = len(item.collection.all_objects) if item.collection else 0
+        icon = 'OUTLINER_COLLECTION' if count > 0 else 'ERROR'
+
+        row.label(text=item.name, icon=icon)
         row.label(text=f"ID {item.class_id}")
         row.label(text=f"{item.count_min}-{item.count_max}")
 
@@ -35,6 +38,9 @@ class SDG_PT_setup(SDG_PanelBase, bpy.types.Panel):
             row = layout.row(align=True)
             row.prop(entry, "count_min")
             row.prop(entry, "count_max")
+            if entry.collection:
+                n = len(entry.collection.all_objects)
+                layout.label(text=f"{n} object(s) in this class")
 
 class SDG_PT_placement(SDG_PanelBase, bpy.types.Panel):
     bl_label = "Object Placement"

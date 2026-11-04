@@ -2,6 +2,7 @@ import bpy # type: ignore
 from bpy.props import (
     BoolProperty, FloatProperty, PointerProperty, CollectionProperty, IntProperty, StringProperty,
  ) # type: ignore
+from .class_list import refresh_classes
 
 def poll_camera(self, obj):
     return obj.type == 'CAMERA'
@@ -15,6 +16,10 @@ class SDG_ClassEntry(bpy.types.PropertyGroup):
     count_max: IntProperty(name="Max", default=3, min=0)
 
 
+def update_subjects(self, context):
+    refresh_classes(self)
+
+
 class SDG_Settings(bpy.types.PropertyGroup):
 
     pos_range: FloatProperty(
@@ -26,7 +31,7 @@ class SDG_Settings(bpy.types.PropertyGroup):
     subjects: PointerProperty(
         name="Subjects",
         type=bpy.types.Collection,
-        description="Collection whose child collections become Classes",
+        description="Collection whose child collections become Classes", update=update_subjects,
     ) # type: ignore
     environment: PointerProperty(
         name="Environment",
