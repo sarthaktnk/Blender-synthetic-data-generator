@@ -1,6 +1,7 @@
 import bpy
 from .class_list import refresh_classes
 from .checks import get_problems
+from .spawn import spawn_instances, clear_spawned
 
 class SDG_OT_refresh_classes(bpy.types.Operator):
     bl_idname = "sdg.refresh_classes"
@@ -36,8 +37,36 @@ class SDG_OT_generate(bpy.types.Operator):
         self.report({'INFO'}, "Generate isn't built yet, but the button works")
         return {'FINISHED'}
 
+class SDG_OT_spawn_test(bpy.types.Operator):
+    bl_idname = "sdg.spawn_test"
+    bl_label = "Spawn Test"
+    bl_description = "Temporary: spawn instances for image 0"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        blocking, warnings = get_problems(context.scene.sdg_settings)
+        return not blocking
+
+    def execute(self, context):
+        spawned = spawn_instances(context, context.scene.sdg_settings, 0)
+        self.report({'INFO'}, f"Spawned {len(spawned)} objects(s)")
+        return {'FINISHED'}
+
+class SDG_OT_clear_spawned(bpy.types.Operator):
+    bl_idname = "sdg.clear_spawned"
+    bl_label = "Clear Spawned"
+    bl_description = "Temporary: delete everything the add-on spawned"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        removed = clear_spawned()
+        self.report({'INFO'}, f"Removed {removed} object(s)")
+        return {'FINISHED'}
 
 classes = (
     SDG_OT_refresh_classes,
     SDG_OT_generate,
+    SDG_OT_spawn_test,
+    SDG_OT_clear_spawned,
 )

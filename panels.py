@@ -68,6 +68,11 @@ class SDG_PT_placement(SDG_PanelBase, bpy.types.Panel):
         row.prop(settings, "scale_min")
         row.prop(settings, "scale_max")
 
+        layout.separator()
+        layout.label(text="Temporary test buttons")
+        layout.operator("sdg.spawn_test")
+        layout.operator("sdg.clear_spawned")
+
 class SDG_PT_output(SDG_PanelBase, bpy.types.Panel):
     bl_label = "Output"
     bl_idname = "SDG_PT_output"
