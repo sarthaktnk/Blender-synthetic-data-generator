@@ -55,7 +55,28 @@ class SDG_PT_placement(SDG_PanelBase, bpy.types.Panel):
         settings = context.scene.sdg_settings
         layout = self.layout
         layout.active = settings.use_placement
-        layout.prop(settings, "pos_range")
+        layout.label(text="Defaults for all classes")
+
+        row = layout.row(align=True)
+        row.prop(settings, "area_length")
+        row.prop(settings, "area_width")
+
+        layout.prop(settings, "spacing", slider=True)
+        layout.prop(settings, "rotation_mode")
+
+        row = layout.row(align=True)
+        row.prop(settings, "scale_min")
+        row.prop(settings, "scale_max")
+
+class SDG_PT_output(SDG_PanelBase, bpy.types.Panel):
+    bl_label = "Output"
+    bl_idname = "SDG_PT_output"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        settings = context.scene.sdg_settings
+        self.layout.prop(settings, "num_images")
+        self.layout.prop(settings, "seed")
 
 
 class SDG_PT_run(SDG_PanelBase, bpy.types.Panel):
@@ -79,5 +100,6 @@ classes = (
     SDG_UL_classes,
     SDG_PT_setup,
     SDG_PT_placement,
+    SDG_PT_output,
     SDG_PT_run,
 )

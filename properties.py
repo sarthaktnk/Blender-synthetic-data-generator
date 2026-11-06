@@ -1,6 +1,6 @@
 import bpy # type: ignore
 from bpy.props import (
-    BoolProperty, FloatProperty, PointerProperty, CollectionProperty, IntProperty, StringProperty,
+    BoolProperty, FloatProperty, PointerProperty, CollectionProperty, IntProperty, StringProperty, EnumProperty
  ) # type: ignore
 from .class_list import refresh_classes
 
@@ -22,12 +22,38 @@ def update_subjects(self, context):
 
 class SDG_Settings(bpy.types.PropertyGroup):
 
-    pos_range: FloatProperty(
-        name="Position Range",
-        default=2.0,
-        min=0.0,
-        max=10.0
+    area_length: FloatProperty(
+        name="Length", default=2.0, min=0.01,
+        subtype='DISTANCE', unit='LENGTH',
+        description="Size of the placement area alomg X",
     ) # type: ignore
+    area_width: FloatProperty(
+        name="Width", default=1.5, min=0.01,
+        subtype='DISTANCE', unit='LENGTH',
+        description="Size of the placement area alomg Y",
+    ) # type: ignore
+    spacing: FloatProperty(
+        name="Min. gap", default=0.1, min=0.0, max=1.0,
+        subtype='DISTANCE', unit='LENGTH',
+        description="Smallest allowed gap between two objects",
+    ) # type: ignore
+    rotation_mode: EnumProperty(
+        name="Rotation",
+        items=[
+            ('ANY', "Any",  "Random rotation on every axis"),
+            ('UPRIGHT', "Upright",  "Random turn around Z only"),
+            ('FLAT', "Flat",  "Lying on its side, random turn around Z"),
+            ('FIXED', "Fixed",  "Keep the original rotation"),
+        ],
+        default='ANY',
+    ) # type: ignore
+    scale_min: FloatProperty(name="Min", default=0.8, min=0.01)
+    scale_max: FloatProperty(name="Max", default=1.2, min=0.01)
+    num_images: IntProperty(name="Images", default=500, min=1, max=100000)
+    seed: IntProperty(
+        name="Seed", default=42, min=0,
+        description="Same seed and same settings give the same dataset",
+    )
     subjects: PointerProperty(
         name="Subjects",
         type=bpy.types.Collection,

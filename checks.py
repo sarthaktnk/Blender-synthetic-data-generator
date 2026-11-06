@@ -25,5 +25,7 @@ def get_problems(settings):
         has_light = any(obj.type == 'LIGHT' for obj in settings.environment.all_objects)
         if not has_light:
             warnings.append("Environment has no lights")
-
+            
+    if settings.use_placement and settings.scale_min > settings.scale_max:
+        blocking.append("Scale: Min is above Max")
     return blocking, warnings
