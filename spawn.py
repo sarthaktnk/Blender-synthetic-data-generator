@@ -1,7 +1,9 @@
 import bpy
+from math import pi, hypot
 from .rng import make_rng
 
 SPAWN_COLLECTION = "SDG_Spawned"
+MAX_TRIES = 50
 
 
 def clear_spawned():
@@ -18,8 +20,37 @@ def clear_spawned():
     return len(objects)
 
 
+def pick_rotation(rng, template, mode):
+    """Return (x, y, z) angles in radians for the chosen rotation mode."""
+    tx, ty, tz = template.rotation_euler
+    if mode == 'ANY':
+        return (rng.uniform(0, 2*pi), rng.uniform(0, 2*pi), rng.uniform(0, 2*pi))
+    if mode == 'UPRIGHT':
+        return (tx, ty, rng.uniform(0, 2*pi))
+    if mode == 'FLAT':
+        return (tx + pi/2, ty, rng.uniform(0, 2*pi))
+    return (tx, ty, tz)
+
+
+def find_position(rng, placed, radius, settings):
+    """Try to find a free spot. Reeturns (x,y), or None if nothing fits.
+    "placed" is a list of (x, y, radius) tuples for objects already down."""
+    half_x = settings.area_length / 2
+    half_y = settings.area_width / 2
+
+    for _ in range(MAX_TRIES):
+        x = rng.uniform(-half_x, half_x)
+        y = rng.uniform(-half_y, half_y)
+
+        if all(hypot(x - px, y-py) >= radius + pr + settings.spacing for px, py, pr in placed):
+            return x, y
+    return None
+
+
+
 def spawn_instances(context, settings, image_index):
-    """Create the instances for ONE image. Returns the list of new objects."""
+    """Create the instances for ONE image.
+    Returns (spawned objects, number that did not fit)."""
     clear_spawned()
 
     holder = bpy.data.collections.new(SPAWN_COLLECTION)
@@ -27,12 +58,12 @@ def spawn_instances(context, settings, image_index):
 
     rng = make_rng(settings.seed, image_index, "objects")
     spawned = []
-    x = 0.0
+    placed = []
+    failed = 0
 
     for entry in settings.class_list:
         if entry.collection is None:
             continue
-
         templates = sorted(entry.collection.objects, key=lambda o: o.name)
         if not templates:
             continue
@@ -44,9 +75,25 @@ def spawn_instances(context, settings, image_index):
             obj = template.copy()
             obj.name = f"{entry.name}_inst"
             obj["sdg_class_id"] = entry.class_id
+
+            if settings.use_placement:
+                factor = rng.uniform(settings.scale_min, settings.scale_max)
+                obj.scale = template.scale * factor
+                obj.rotation_euler = pick_rotation(rng, template, settings.rotation_mode)
+
+                radius = max(obj.dimensions) / 2
+                position = find_position(rng, placed, radius, settings)
+
+                if position is None:
+                    bpy.data.objects.remove(obj)
+                    failed += 1
+                    continue
+
+                x, y = position
+                obj.location = (x, y, template.location.z)
+                placed.append((x, y, radius))
+
             holder.objects.link(obj)
-            obj.location = (x, 3.0, 3.0)
-            x += 0.5
             spawned.append(obj)
 
-    return spawned
+    return spawned, failed  

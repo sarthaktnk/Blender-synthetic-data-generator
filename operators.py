@@ -49,8 +49,12 @@ class SDG_OT_spawn_test(bpy.types.Operator):
         return not blocking
 
     def execute(self, context):
-        spawned = spawn_instances(context, context.scene.sdg_settings, 0)
-        self.report({'INFO'}, f"Spawned {len(spawned)} objects(s)")
+        spawned, failed = spawn_instances(context, context.scene.sdg_settings, 0)
+
+        message = f"Spawned {len(spawned)} object(s)"
+        if failed:
+            message += f", {failed} did not fit"
+        self.report({'WARNING' if failed else 'INFO'}, message)
         return {'FINISHED'}
 
 class SDG_OT_clear_spawned(bpy.types.Operator):
