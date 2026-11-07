@@ -77,6 +77,8 @@ class SDG_Settings(bpy.types.PropertyGroup):
         description="Randomize where the subjects are placed",
     ) # type: ignore
 
+    preview_index: IntProperty(default=0, min=0)
+
     class_list: CollectionProperty(type=SDG_ClassEntry)
 
     class_index: IntProperty(default=0)

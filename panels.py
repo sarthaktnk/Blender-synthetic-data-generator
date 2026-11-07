@@ -68,10 +68,6 @@ class SDG_PT_placement(SDG_PanelBase, bpy.types.Panel):
         row.prop(settings, "scale_min")
         row.prop(settings, "scale_max")
 
-        layout.separator()
-        layout.label(text="Temporary test buttons")
-        layout.operator("sdg.spawn_test")
-        layout.operator("sdg.clear_spawned")
 
 class SDG_PT_output(SDG_PanelBase, bpy.types.Panel):
     bl_label = "Output"
@@ -90,12 +86,18 @@ class SDG_PT_run(SDG_PanelBase, bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        blocking, warnings = get_problems(context.scene.sdg_settings)
+        settings = context.scene.sdg_settings
+        blocking, warnings = get_problems(settings)
 
         for message in blocking:
             layout.label(text=message, icon='ERROR')
         for message in warnings:
             layout.label(text=message, icon='INFO')
+
+        layout.label(text=f"Next preview: image {settings.preview_index}")
+        row = layout.row(align=True)
+        row.operator("sdg.preview", icon='FILE_REFRESH')
+        row.operator("sdg.clear_preview", icon='X')
 
         row = layout.row()
         row.scale_y = 1.8

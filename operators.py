@@ -1,7 +1,7 @@
 import bpy
 from .class_list import refresh_classes
 from .checks import get_problems
-from .spawn import spawn_instances, clear_spawned
+from .spawn import (spawn_instances, clear_spawned, hide_originals, restore_originals)
 
 class SDG_OT_refresh_classes(bpy.types.Operator):
     bl_idname = "sdg.refresh_classes"
@@ -37,40 +37,49 @@ class SDG_OT_generate(bpy.types.Operator):
         self.report({'INFO'}, "Generate isn't built yet, but the button works")
         return {'FINISHED'}
 
-class SDG_OT_spawn_test(bpy.types.Operator):
-    bl_idname = "sdg.spawn_test"
-    bl_label = "Spawn Test"
-    bl_description = "Temporary: spawn instances for image 0"
+class SDG_OT_preview(bpy.types.Operator):
+    bl_idname = "sdg.preview"
+    bl_label = "preview"
+    bl_description = "Show the next randomized scene (same seed, same images)"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(cls, context):
         blocking, warnings = get_problems(context.scene.sdg_settings)
-        return not blocking
+        if blocking:
+            cls.poll_message_set(blocking[0])
+            return False
+        return True
 
     def execute(self, context):
-        spawned, failed = spawn_instances(context, context.scene.sdg_settings, 0)
+        settings = context.scene.sdg_settings
 
-        message = f"Spawned {len(spawned)} object(s)"
+        spawned, failed = spawn_instances(context, settings, settings.preview_index)
+        hide_originals(settings)
+        settings.preview_index += 1
+
+        message = f"Image {settings.preview_index - 1}: {len(spawned)} object(s)"
         if failed:
             message += f", {failed} did not fit"
         self.report({'WARNING' if failed else 'INFO'}, message)
         return {'FINISHED'}
 
-class SDG_OT_clear_spawned(bpy.types.Operator):
-    bl_idname = "sdg.clear_spawned"
-    bl_label = "Clear Spawned"
-    bl_description = "Temporary: delete everything the add-on spawned"
+class SDG_OT_clear_preview(bpy.types.Operator):
+    bl_idname = "sdg.clear_preview"
+    bl_label = "Clear"
+    bl_description = "TRemove the preview objects and show the originals again"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        removed = clear_spawned()
-        self.report({'INFO'}, f"Removed {removed} object(s)")
+        clear_spawned()
+        restore_originals()
+        context.scene.sdg_settings.preview_index = 0
         return {'FINISHED'}
 
 classes = (
     SDG_OT_refresh_classes,
+    SDG_OT_preview,
+    SDG_OT_clear_preview,
     SDG_OT_generate,
-    SDG_OT_spawn_test,
-    SDG_OT_clear_spawned,
+
 )

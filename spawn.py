@@ -4,6 +4,7 @@ from .rng import make_rng
 
 SPAWN_COLLECTION = "SDG_Spawned"
 MAX_TRIES = 50
+HIDDEN_MARK = "sdg_preview_hidden"
 
 
 def clear_spawned():
@@ -19,6 +20,30 @@ def clear_spawned():
     bpy.data.collections.remove(holder)
     return len(objects)
 
+def hide_originals(settings):
+    """Hide the template objects in the viewport, and mark the ones we hid."""
+    for entry in settings.class_list:
+        if entry.collection is None:
+            continue
+        for obj in entry.collection.all_objects:
+            try:
+                if obj.visible_get():
+                    obj.hide_set(True)
+                    obj[HIDDEN_MARK] = True
+            except RuntimeError:
+                pass
+
+
+def restore_originals():
+    """Unhide everything we hid, and remove the markers."""
+    for obj in bpy.data.objects:
+        if obj.get(HIDDEN_MARK):
+            try:
+                obj.hide_set(False)
+            except RuntimeError:
+                pass
+            del obj[HIDDEN_MARK]
+
 
 def pick_rotation(rng, template, mode):
     """Return (x, y, z) angles in radians for the chosen rotation mode."""
@@ -33,7 +58,7 @@ def pick_rotation(rng, template, mode):
 
 
 def find_position(rng, placed, radius, settings):
-    """Try to find a free spot. Reeturns (x,y), or None if nothing fits.
+    """Try to find a free spot. Returns (x,y), or None if nothing fits.
     "placed" is a list of (x, y, radius) tuples for objects already down."""
     half_x = settings.area_length / 2
     half_y = settings.area_width / 2
@@ -45,7 +70,6 @@ def find_position(rng, placed, radius, settings):
         if all(hypot(x - px, y-py) >= radius + pr + settings.spacing for px, py, pr in placed):
             return x, y
     return None
-
 
 
 def spawn_instances(context, settings, image_index):
@@ -75,6 +99,9 @@ def spawn_instances(context, settings, image_index):
             obj = template.copy()
             obj.name = f"{entry.name}_inst"
             obj["sdg_class_id"] = entry.class_id
+
+            if HIDDEN_MARK in obj:
+                del obj[HIDDEN_MARK]
 
             if settings.use_placement:
                 factor = rng.uniform(settings.scale_min, settings.scale_max)
