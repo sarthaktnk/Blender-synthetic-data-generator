@@ -4,8 +4,24 @@ from bpy.props import (
  ) # type: ignore
 from .class_list import refresh_classes
 
+ROTATION_ITEMS = [
+    ('ANY', "Any",  "Random rotation on every axis"),
+    ('UPRIGHT', "Upright",  "Random turn around Z only"),
+    ('FLAT', "Flat",  "Lying on its side, random turn around Z"),
+    ('FIXED', "Fixed",  "Keep the original rotation"),
+]
+
 def poll_camera(self, obj):
     return obj.type == 'CAMERA'
+
+def update_override(self, context):
+    if self.use_override:
+        s = context.scene.sdg_settings
+        self.area_length = s.area_length
+        self.area_width = s.area_width
+        self.rotation_mode = s.rotation_mode
+        self.scale_min = s.scale_min
+        self.scale_max = s.scale_max
 
 class SDG_ClassEntry(bpy.types.PropertyGroup):
 
@@ -14,6 +30,24 @@ class SDG_ClassEntry(bpy.types.PropertyGroup):
     collection: PointerProperty(type=bpy.types.Collection)
     count_min: IntProperty(name="Min", default=1, min=0)
     count_max: IntProperty(name="Max", default=3, min=0)
+
+    use_override: BoolProperty(
+        name="Override",
+        default=False,
+        update=update_override,
+        description="Use this calss's own placement settings instead of the defaults",
+    )
+    area_length: FloatProperty(
+        name="Length", default=2.0, min=0.01,
+        subtype='DISTANCE', unit='LENGTH',
+    )
+    area_width: FloatProperty(
+        name="Width", default=1.5, min=0.01,
+        subtype='DISTANCE', unit='LENGTH',
+    )
+    rotation_mode: EnumProperty(name="Rotation", items=ROTATION_ITEMS, default='ANY')
+    scale_min: FloatProperty(name="Min", default=0.8, min=0.01)
+    scale_max: FloatProperty(name="Max", default=1.2, min=0.01)
 
 
 def update_subjects(self, context):
@@ -39,12 +73,7 @@ class SDG_Settings(bpy.types.PropertyGroup):
     ) # type: ignore
     rotation_mode: EnumProperty(
         name="Rotation",
-        items=[
-            ('ANY', "Any",  "Random rotation on every axis"),
-            ('UPRIGHT', "Upright",  "Random turn around Z only"),
-            ('FLAT', "Flat",  "Lying on its side, random turn around Z"),
-            ('FIXED', "Fixed",  "Keep the original rotation"),
-        ],
+        items=ROTATION_ITEMS,
         default='ANY',
     ) # type: ignore
     scale_min: FloatProperty(name="Min", default=0.8, min=0.01)

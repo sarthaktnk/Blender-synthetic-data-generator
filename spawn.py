@@ -57,17 +57,17 @@ def pick_rotation(rng, template, mode):
     return (tx, ty, tz)
 
 
-def find_position(rng, placed, radius, settings):
+def find_position(rng, placed, radius, area_length, area_width, spacing):
     """Try to find a free spot. Returns (x,y), or None if nothing fits.
     "placed" is a list of (x, y, radius) tuples for objects already down."""
-    half_x = settings.area_length / 2
-    half_y = settings.area_width / 2
+    half_x = area_length / 2
+    half_y = area_width / 2
 
     for _ in range(MAX_TRIES):
         x = rng.uniform(-half_x, half_x)
         y = rng.uniform(-half_y, half_y)
 
-        if all(hypot(x - px, y-py) >= radius + pr + settings.spacing for px, py, pr in placed):
+        if all(hypot(x - px, y-py) >= radius + pr + spacing for px, py, pr in placed):
             return x, y
     return None
 
@@ -94,6 +94,15 @@ def spawn_instances(context, settings, image_index):
 
         count = rng.randint(entry.count_min, entry.count_max)
 
+        if entry.use_override:
+            area_l, area_w = entry.area_length, entry.area_width
+            rot_mode = entry.rotation_mode
+            s_min, s_max = entry.scale_min, entry.scale_max
+        else:
+            area_l, area_w = settings.area_length, settings.area_width
+            rot_mode = settings.rotation_mode
+            s_min, s_max = settings.scale_min, settings.scale_max
+
         for _ in range(count):
             template = rng.choice(templates)
             obj = template.copy()
@@ -104,12 +113,12 @@ def spawn_instances(context, settings, image_index):
                 del obj[HIDDEN_MARK]
 
             if settings.use_placement:
-                factor = rng.uniform(settings.scale_min, settings.scale_max)
+                factor = rng.uniform(s_min, s_max)
                 obj.scale = template.scale * factor
-                obj.rotation_euler = pick_rotation(rng, template, settings.rotation_mode)
+                obj.rotation_euler = pick_rotation(rng, template, rot_mode)
 
                 radius = max(obj.dimensions) / 2
-                position = find_position(rng, placed, radius, settings)
+                position = find_position(rng, placed, radius, area_l, area_w, settings.spacing)
 
                 if position is None:
                     bpy.data.objects.remove(obj)

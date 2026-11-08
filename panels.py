@@ -11,6 +11,15 @@ class SDG_UL_classes(bpy.types.UIList):
         row.label(text=f"ID {item.class_id}")
         row.label(text=f"{item.count_min}-{item.count_max}")
 
+
+class SDG_UL_overrides(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        row = layout.row(align=True)
+        row.label(text=item.name, icon='OUTLINER_COLLECTION')
+        side = row.row()
+        side.alignment = 'RIGHT'
+        side.label(text="Custom" if item.use_override else "Default")
+
 class SDG_PanelBase:
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
@@ -68,6 +77,27 @@ class SDG_PT_placement(SDG_PanelBase, bpy.types.Panel):
         row.prop(settings, "scale_min")
         row.prop(settings, "scale_max")
 
+        layout.separator()
+        layout.label(text="Class overrrides")
+        layout.template_list(
+            "SDG_UL_overrides", "",
+            settings, "class_list",
+            settings, "class_index",
+            rows=3,
+        )
+
+        if settings.class_list:
+            entry = settings.class_list[settings.class_index]
+            layout.prop(entry, "use_override", text=f"Override defaults for '{entry.name}'")
+            if entry.use_override:
+                row = layout.row(align=True)
+                row.prop(entry, "area_length")
+                row.prop(entry, "area_width")
+                layout.prop(entry, "rotation_mode")
+                row = layout.row(align=True)
+                row.prop(entry, "scale_min")
+                row.prop(entry, "scale_max")
+
 
 class SDG_PT_output(SDG_PanelBase, bpy.types.Panel):
     bl_label = "Output"
@@ -105,6 +135,7 @@ class SDG_PT_run(SDG_PanelBase, bpy.types.Panel):
 
 classes = (
     SDG_UL_classes,
+    SDG_UL_overrides,
     SDG_PT_setup,
     SDG_PT_placement,
     SDG_PT_output,

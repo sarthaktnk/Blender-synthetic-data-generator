@@ -12,6 +12,8 @@ def get_problems(settings):
                 blocking.append(f"class '{entry.name}' is empty")
             if entry.count_min > entry.count_max:
                 blocking.append(f"Class '{entry.name}': Min is above Max")
+            if (settings.use_placement and entry.use_override and entry.scale_min > entry.scale_max):
+                blocking.append(f"Class '{entry.name}': Scale Min is above Max")
 
         if all(entry.count_max == 0 for entry in settings.class_list):
             blocking.append("All class counts are 0")
