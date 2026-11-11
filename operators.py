@@ -2,6 +2,21 @@ import bpy
 from .class_list import refresh_classes
 from .checks import get_problems
 from .spawn import (spawn_instances, clear_spawned, hide_originals, restore_originals)
+from .light_list import refresh_lights
+
+class SDG_OT_refresh_lights(bpy.types.Operator):
+    bl_idname = "sdg.refresh_lights"
+    bl_label = "Refresh"
+    bl_description = "Read the lights inside the Environment collection"
+
+    def execute(self, context):
+        settings = context.scene.sdg_settings
+        if settings.environment is None:
+            self.report({'WARNING'}, "Pick an Environment collection first")
+            return {'CANCELLED'}
+        added, removed = refresh_lights(settings)
+        self.report({'INFO'}, f"{added} added, {removed} removed")
+        return {'FINISHED'}
 
 class SDG_OT_refresh_classes(bpy.types.Operator):
     bl_idname = "sdg.refresh_classes"
@@ -77,6 +92,7 @@ class SDG_OT_clear_preview(bpy.types.Operator):
         return {'FINISHED'}
 
 classes = (
+    SDG_OT_refresh_lights,
     SDG_OT_refresh_classes,
     SDG_OT_preview,
     SDG_OT_clear_preview,

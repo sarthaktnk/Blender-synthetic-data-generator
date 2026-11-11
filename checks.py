@@ -30,4 +30,13 @@ def get_problems(settings):
             
     if settings.use_placement and settings.scale_min > settings.scale_max:
         blocking.append("Scale: Min is above Max")
+
+    if settings.use_lights:
+        for light in settings.light_list:
+            if not light.use:
+                continue
+            if light.intensity_min > light.intensity_max:
+                blocking.append(f"Light '{light.name}': intensity Min is above Max")
+            if light.temp_min > light.temp_max:
+                blocking.append(f"Light '{light.name}': temperature Min is above Max")
     return blocking, warnings

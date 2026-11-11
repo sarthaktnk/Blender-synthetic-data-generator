@@ -20,6 +20,16 @@ class SDG_UL_overrides(bpy.types.UIList):
         side.alignment = 'RIGHT'
         side.label(text="Custom" if item.use_override else "Default")
 
+
+class SDG_UL_lights(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        row = layout.row(align=True)
+        row.prop(item, "use", text="")
+        row.label(text=item.name, icon='LIGHT')
+        side = row.row()
+        side.alignment = 'RIGHT'
+        side.label(text=item.obj.data.type.title() if item.obj else "?")
+
 class SDG_PanelBase:
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
@@ -99,6 +109,47 @@ class SDG_PT_placement(SDG_PanelBase, bpy.types.Panel):
                 row.prop(entry, "scale_max")
 
 
+class SDG_PT_lights(SDG_PanelBase, bpy.types.Panel):
+    bl_label = "Lights"
+    bl_idname = "SDG_PT_lights"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw_header(self, context):
+        self.layout.prop(context.scene.sdg_settings, "use_lights", text="")
+
+    def draw(self, context):
+        settings = context.scene.sdg_settings
+        layout = self.layout
+        layout.active = settings.use_lights
+
+        layout.label(text="Found in Environment")
+        rows = max(2, min(len(settings.light_list), 6))
+        layout.template_list(
+            "SDG_UL_lights", "",
+            settings, "light_list",
+            settings, "light_index",
+            rows=rows,
+        )
+        layout.operator("sdg.refresh_lights", icon='FILE_REFRESH')
+
+        if settings.light_list:
+            light = settings.light_list[settings.light_index]
+            layout.separator()
+            layout.label(text=f"Settings for '{light.name}'")
+
+            col = layout.column()
+            col.active = light.use
+            col.label(text="Intensity x")
+            row = col.row(align=True)
+            row.prop(light, "intensity_min")
+            row.prop(light, "intensity_max")
+            col.label(text="Color temperature (K)")
+            row = col.row(align=True)
+            row.prop(light, "temp_min")
+            row.prop(light, "temp_max")
+            col.prop(light, "off_chance", slider=True)
+
+
 class SDG_PT_output(SDG_PanelBase, bpy.types.Panel):
     bl_label = "Output"
     bl_idname = "SDG_PT_output"
@@ -136,8 +187,10 @@ class SDG_PT_run(SDG_PanelBase, bpy.types.Panel):
 classes = (
     SDG_UL_classes,
     SDG_UL_overrides,
+    SDG_UL_lights,
     SDG_PT_setup,
     SDG_PT_placement,
+    SDG_PT_lights,
     SDG_PT_output,
     SDG_PT_run,
 )

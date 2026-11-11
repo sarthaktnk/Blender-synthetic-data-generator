@@ -3,6 +3,7 @@ from bpy.props import (
     BoolProperty, FloatProperty, PointerProperty, CollectionProperty, IntProperty, StringProperty, EnumProperty
  ) # type: ignore
 from .class_list import refresh_classes
+from .light_list import refresh_lights
 
 ROTATION_ITEMS = [
     ('ANY', "Any",  "Random rotation on every axis"),
@@ -53,6 +54,29 @@ class SDG_ClassEntry(bpy.types.PropertyGroup):
 def update_subjects(self, context):
     refresh_classes(self)
 
+class SDG_LightEntry(bpy.types.PropertyGroup):
+    name: StringProperty(name="Light", default="light")
+    obj: PointerProperty(type=bpy.types.Object)
+    use: BoolProperty(
+        name="Include", default=True,
+        description="Randomize this light (Untick to keep it fixed)",
+    )
+
+    intensity_min: FloatProperty(name="Min", default=0.5, min=0.0)
+    intensity_max: FloatProperty(name="Max", default=1.5, min=0.0)
+    temp_min: IntProperty(name="Min", default=3500, min=1000, max=12000)
+    temp_max: IntProperty(name="Max", default=7500, min=1000, max=12000)
+
+    off_chance: FloatProperty(
+        name="Off chance", default=0.0, min=0.0, max=100.0,
+        subtype='PERCENTAGE',
+        description="Chance that this light is switched off in an image",
+    )
+
+
+def update_environment(self, context):
+    refresh_lights(self)
+
 
 class SDG_Settings(bpy.types.PropertyGroup):
 
@@ -91,7 +115,7 @@ class SDG_Settings(bpy.types.PropertyGroup):
     environment: PointerProperty(
         name="Environment",
         type=bpy.types.Collection,
-        description="Collection holding lights and other fixed objects",
+        description="Collection holding lights and other fixed objects", update=update_environment,
     ) # type: ignore
     camera: PointerProperty(
         name="Camera",
@@ -106,6 +130,14 @@ class SDG_Settings(bpy.types.PropertyGroup):
         description="Randomize where the subjects are placed",
     ) # type: ignore
 
+    use_lights: BoolProperty(
+        name="Lights", default=True,
+        description="Randomize the lights",
+    )
+    light_list: CollectionProperty(type=SDG_LightEntry)
+    light_index: IntProperty(default=0)
+
+
     preview_index: IntProperty(default=0, min=0)
 
     class_list: CollectionProperty(type=SDG_ClassEntry)
@@ -115,5 +147,6 @@ class SDG_Settings(bpy.types.PropertyGroup):
 
 classes = (
     SDG_ClassEntry,
+    SDG_LightEntry,
     SDG_Settings,
 )
