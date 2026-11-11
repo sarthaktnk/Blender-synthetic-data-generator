@@ -3,6 +3,7 @@ from .class_list import refresh_classes
 from .checks import get_problems
 from .spawn import (spawn_instances, clear_spawned, hide_originals, restore_originals)
 from .light_list import refresh_lights
+from .lights import randomize_lights, restore_lights
 
 class SDG_OT_refresh_lights(bpy.types.Operator):
     bl_idname = "sdg.refresh_lights"
@@ -68,12 +69,14 @@ class SDG_OT_preview(bpy.types.Operator):
 
     def execute(self, context):
         settings = context.scene.sdg_settings
+        image = settings.preview_index
 
-        spawned, failed = spawn_instances(context, settings, settings.preview_index)
+        spawned, failed = spawn_instances(context, settings, image)
         hide_originals(settings)
+        lights_changed = randomize_lights(settings, image)
         settings.preview_index += 1
 
-        message = f"Image {settings.preview_index - 1}: {len(spawned)} object(s)"
+        message = f"Image {image}: {len(spawned)} object(s), {lights_changed} light(s)"
         if failed:
             message += f", {failed} did not fit"
         self.report({'WARNING' if failed else 'INFO'}, message)
@@ -88,6 +91,7 @@ class SDG_OT_clear_preview(bpy.types.Operator):
     def execute(self, context):
         clear_spawned()
         restore_originals()
+        restore_lights()
         context.scene.sdg_settings.preview_index = 0
         return {'FINISHED'}
 
