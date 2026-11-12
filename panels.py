@@ -150,6 +150,41 @@ class SDG_PT_lights(SDG_PanelBase, bpy.types.Panel):
             col.prop(light, "off_chance", slider=True)
 
 
+class SDG_PT_camera(SDG_PanelBase, bpy.types.Panel):
+    bl_label = "Camera"
+    bl_idname = "SDG_PT_camera"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw_header(self, context):
+        self.layout.prop(context.scene.sdg_settings, "use_camera", text="")
+
+    def draw(self, context):
+        settings = context.scene.sdg_settings
+        layout = self.layout
+        layout.active = settings.use_camera
+
+        layout.prop(settings, "camera_target")
+        layout.label(text="Blank = world origin. any object works, even an Empty.")
+
+        def pair(title, low, high):
+            layout.label(text=title)
+            row = layout.row(align=True)
+            row.prop(settings, low)
+            row.prop(settings, high)
+
+        pair("Distance", "distance_min", "distance_max")
+        pair("Azimuth", "azimuth_min", "azimuth_max")
+        pair("Elevation", "elevation_min", "elevation_max")
+        pair("Focal length", "focal_min", "focal_max")
+
+        layout.prop(settings, "use_dof")
+        col = layout.column()
+        col.active = settings.use_dof
+        row = col.row(align=True)
+        row.prop(settings, "aperture_min")
+        row.prop(settings, "aperture_max")
+
+
 class SDG_PT_output(SDG_PanelBase, bpy.types.Panel):
     bl_label = "Output"
     bl_idname = "SDG_PT_output"
@@ -191,6 +226,7 @@ classes = (
     SDG_PT_setup,
     SDG_PT_placement,
     SDG_PT_lights,
+    SDG_PT_camera,
     SDG_PT_output,
     SDG_PT_run,
 )

@@ -4,6 +4,7 @@ from bpy.props import (
  ) # type: ignore
 from .class_list import refresh_classes
 from .light_list import refresh_lights
+from math import pi, radians
 
 ROTATION_ITEMS = [
     ('ANY', "Any",  "Random rotation on every axis"),
@@ -144,6 +145,55 @@ class SDG_Settings(bpy.types.PropertyGroup):
 
     class_index: IntProperty(default=0)
     next_class_id: IntProperty(default=0)
+
+    use_camera: BoolProperty(
+        name="Camera", default=True,
+        description="Randomize the camera",
+    )
+    camera_target: PointerProperty(
+        name="Target", type=bpy.types.Object,
+        description="The camera orbits and looks at this object (blank = world origin)"
+    )
+    distance_min: FloatProperty(
+        name="Min", default=1.5, min=0.05,
+        subtype='DISTANCE', unit='LENGTH',
+    )
+    distance_max: FloatProperty(
+        name="Max", default=4.0, min=0.05,
+        subtype='DISTANCE', unit='LENGTH',
+    )
+    azimuth_min: FloatProperty(
+        name="Min", default=0.0, min=0.0, max=2 * pi,
+        subtype='ANGLE', unit='ROTATION',
+        description="Angle around the target, 0 = the +X side",
+    )
+    azimuth_max: FloatProperty(
+        name="Max", default=2 * pi, min=0.0, max=2 * pi,
+        subtype='ANGLE', unit='ROTATION',
+    )
+    elevation_min: FloatProperty(
+        name="Min", default=radians(10), min=0.0, max=radians(89),
+        subtype='ANGLE', unit='ROTATION',
+        description="Height angle above the ground plane",
+    )
+    elevation_max: FloatProperty(
+        name="Max", default=radians(60), min=0.0, max=radians(89),
+        subtype='ANGLE', unit='ROTATION',
+    )
+    focal_min: FloatProperty(
+        name="Min", default=35.0, min=1.0, unit='CAMERA',
+        description="Shortest focal length (wider view)",
+    )
+    focal_max: FloatProperty(
+        name="Max", default=85.0, min=1.0, unit='CAMERA',
+        description="Longest focal length (narrower view)",
+    )
+    use_dof: BoolProperty(
+        name="Depth of field", default=False,
+        description="Blur things that are away from the target",
+    )
+    aperture_min: FloatProperty(name="Min", default=2.8, min=0.5)
+    aperture_max: FloatProperty(name="Max", default=8.0, min=0.5)
 
 classes = (
     SDG_ClassEntry,

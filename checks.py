@@ -39,4 +39,22 @@ def get_problems(settings):
                 blocking.append(f"Light '{light.name}': intensity Min is above Max")
             if light.temp_min > light.temp_max:
                 blocking.append(f"Light '{light.name}': temperature Min is above Max")
+
+    if settings.use_camera:
+        ranges = [
+            ("Distance", settings.distance_min, settings.distance_max),
+            ("Azimuth", settings.azimuth_min, settings.azimuth_max),
+            ("Elevation", settings.elevation_min, settings.elevation_max),
+            ("Focal length", settings.focal_min, settings.focal_max),
+        ]
+        if settings.use_dof:
+            ranges.append(("Aperture", settings.aperture_min, settings.aperture_max))
+
+        for label, low, high in ranges:
+            if low > high:
+                blocking.append(f"Camera {label}: Min is above Max")
+
+        if settings.camera_target is not None and settings.camera_target == settings.camera:
+            blocking.append("Camera target can't be the camera itself")
+            
     return blocking, warnings
