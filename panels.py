@@ -192,8 +192,20 @@ class SDG_PT_output(SDG_PanelBase, bpy.types.Panel):
 
     def draw(self, context):
         settings = context.scene.sdg_settings
-        self.layout.prop(settings, "num_images")
-        self.layout.prop(settings, "seed")
+        layout = self.layout
+
+        layout.prop(settings, "num_images")
+
+        row = layout.row(align=True)
+        row.prop(settings, "seed")
+        row.operator("sdg.new_seed", text="", icon='FILE_REFRESH')
+
+        row = layout.row(align=True)
+        row.prop(settings, "res_x")
+        row.prop(settings, "res_y")
+
+        layout.prop(settings, "image_format")
+        layout.prop(settings, "output_dir")
 
 
 class SDG_PT_run(SDG_PanelBase, bpy.types.Panel):

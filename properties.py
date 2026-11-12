@@ -108,6 +108,21 @@ class SDG_Settings(bpy.types.PropertyGroup):
         name="Seed", default=42, min=0,
         description="Same seed and same settings give the same dataset",
     )
+
+    output_dir: StringProperty(
+        name="Folder", subtype='DIR_PATH', default="//synthetic_data",
+        description="Where the dataset is written. // means next to the .blend file"
+    )
+    res_x: IntProperty(name="Width", default=1280, min=64, max=8192, subtype='PIXEL')
+    res_y: IntProperty(name="Height", default=720, min=64, max=8192, subtype='PIXEL')
+    image_format: EnumProperty(
+        name="Format",
+        items=[
+            ('PNG', "PNG", "Lossless, larger files"),
+            ('JPEG', "JPEG", "Smaller files, slight quality loss"),
+        ],
+        default='PNG',
+    )
     subjects: PointerProperty(
         name="Subjects",
         type=bpy.types.Collection,

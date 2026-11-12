@@ -1,3 +1,7 @@
+import os
+import bpy
+
+
 def get_problems(settings):
     blocking = []
     warnings = []
@@ -56,5 +60,17 @@ def get_problems(settings):
 
         if settings.camera_target is not None and settings.camera_target == settings.camera:
             blocking.append("Camera target can't be the camera itself")
-            
+
+    folder = settings.output_dir.strip()
+    if not folder:
+        blocking.append("Pick an output folder")
+    elif folder.startswith("//") and not bpy.data.filepath:
+        blocking.append("Save the .blend file first, or pick a full path")
+    else:
+        full = bpy.path.abspath(folder)
+        if os.path.isdir(full) and not os.access(full, os.W_OK):
+            blocking.append("Output folder is not writable")
+
+    if settings.num_images >= 2000:
+        warnings.append("Large batch: this may take a long time")  
     return blocking, warnings

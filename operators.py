@@ -1,4 +1,5 @@
 import bpy
+import random
 from .class_list import refresh_classes
 from .checks import get_problems
 from .spawn import (spawn_instances, clear_spawned, hide_originals, restore_originals)
@@ -98,11 +99,22 @@ class SDG_OT_clear_preview(bpy.types.Operator):
         context.scene.sdg_settings.preview_index = 0
         return {'FINISHED'}
 
+
+class SDG_OT_new_seed(bpy.types.Operator):
+    bl_idname = "sdg.new_seed"
+    bl_label = "New Seed"
+    bl_description = "Pick a random seed"
+
+    def execute(self, context):
+        context.scene.sdg_settings.seed = random.randint(0, 999999)
+        return {'FINISHED'}
+
 classes = (
     SDG_OT_refresh_lights,
     SDG_OT_refresh_classes,
     SDG_OT_preview,
     SDG_OT_clear_preview,
     SDG_OT_generate,
+    SDG_OT_new_seed,
 
 )
