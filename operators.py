@@ -4,6 +4,7 @@ from .checks import get_problems
 from .spawn import (spawn_instances, clear_spawned, hide_originals, restore_originals)
 from .light_list import refresh_lights
 from .lights import randomize_lights, restore_lights
+from .camera import randomize_camera, restore_camera
 
 class SDG_OT_refresh_lights(bpy.types.Operator):
     bl_idname = "sdg.refresh_lights"
@@ -74,6 +75,7 @@ class SDG_OT_preview(bpy.types.Operator):
         spawned, failed = spawn_instances(context, settings, image)
         hide_originals(settings)
         lights_changed = randomize_lights(settings, image)
+        randomize_camera(settings, image)
         settings.preview_index += 1
 
         message = f"Image {image}: {len(spawned)} object(s), {lights_changed} light(s)"
@@ -92,6 +94,7 @@ class SDG_OT_clear_preview(bpy.types.Operator):
         clear_spawned()
         restore_originals()
         restore_lights()
+        restore_camera()
         context.scene.sdg_settings.preview_index = 0
         return {'FINISHED'}
 
