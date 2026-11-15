@@ -6,6 +6,30 @@ from .spawn import (spawn_instances, clear_spawned, hide_originals, restore_orig
 from .light_list import refresh_lights
 from .lights import randomize_lights, restore_lights
 from .camera import randomize_camera, restore_camera
+from .pipeline import apply_scene, reset_scene
+from .render import image_base, render_still
+
+
+class SDG_OT_render_test(bpy.types.Operator):
+    bl_idname = "sdg.render_test"
+    bl_label = "Render Test"
+    bl_description = "Temporary: render image 0 to the output folder"
+
+    @classmethod
+    def poll(cls, context):
+        blocking, warnings = get_problems(context.scene.sdg_settings)
+        if blocking:
+            cls.poll_message_set(blocking[0])
+            return False
+        return True
+
+    def execute(self, context):
+        settings = context.scene.sdg_settings
+        apply_scene(context, settings, 0)
+        base = image_base(settings, 0)
+        render_still(context, settings, base)
+        self.report({'INFO'}, f"Rendered to {base}")
+        return {'FINISHED'}
 
 class SDG_OT_refresh_lights(bpy.types.Operator):
     bl_idname = "sdg.refresh_lights"
@@ -73,10 +97,7 @@ class SDG_OT_preview(bpy.types.Operator):
         settings = context.scene.sdg_settings
         image = settings.preview_index
 
-        spawned, failed = spawn_instances(context, settings, image)
-        hide_originals(settings)
-        lights_changed = randomize_lights(settings, image)
-        randomize_camera(settings, image)
+        spawned, failed, lights_changed = apply_scene(context, settings, image)
         settings.preview_index += 1
 
         message = f"Image {image}: {len(spawned)} object(s), {lights_changed} light(s)"
@@ -92,10 +113,7 @@ class SDG_OT_clear_preview(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        clear_spawned()
-        restore_originals()
-        restore_lights()
-        restore_camera()
+        reset_scene()
         context.scene.sdg_settings.preview_index = 0
         return {'FINISHED'}
 
@@ -110,6 +128,7 @@ class SDG_OT_new_seed(bpy.types.Operator):
         return {'FINISHED'}
 
 classes = (
+    SDG_OT_render_test,
     SDG_OT_refresh_lights,
     SDG_OT_refresh_classes,
     SDG_OT_preview,

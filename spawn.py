@@ -5,6 +5,7 @@ from .rng import make_rng
 SPAWN_COLLECTION = "SDG_Spawned"
 MAX_TRIES = 50
 HIDDEN_MARK = "sdg_preview_hidden"
+RENDER_MARK = "sdg_render_hidden"
 
 
 def clear_spawned():
@@ -25,7 +26,11 @@ def hide_originals(settings):
     for entry in settings.class_list:
         if entry.collection is None:
             continue
-        for obj in entry.collection.all_objects:
+        for obj in list(entry.collection.all_objects):
+            print("checking:", repr(obj), "in class", entry.name)
+            if not obj.hide_render:
+                obj.hide_render = True
+                obj[RENDER_MARK] = True
             try:
                 if obj.visible_get():
                     obj.hide_set(True)
@@ -43,6 +48,11 @@ def restore_originals():
             except RuntimeError:
                 pass
             del obj[HIDDEN_MARK]
+
+    for obj in bpy.data.objects:
+        if obj.get(RENDER_MARK):
+            obj.hide_render = False
+            del obj[RENDER_MARK]
 
 
 def pick_rotation(rng, template, mode):
@@ -111,6 +121,10 @@ def spawn_instances(context, settings, image_index):
 
             if HIDDEN_MARK in obj:
                 del obj[HIDDEN_MARK]
+
+            if RENDER_MARK in obj:
+                obj.hide_render = False
+                del obj[RENDER_MARK]
 
             if settings.use_placement:
                 factor = rng.uniform(s_min, s_max)
