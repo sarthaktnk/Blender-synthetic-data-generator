@@ -10,27 +10,6 @@ from .pipeline import apply_scene, reset_scene
 from .render import image_base, render_still
 
 
-class SDG_OT_render_test(bpy.types.Operator):
-    bl_idname = "sdg.render_test"
-    bl_label = "Render Test"
-    bl_description = "Temporary: render image 0 to the output folder"
-
-    @classmethod
-    def poll(cls, context):
-        blocking, warnings = get_problems(context.scene.sdg_settings)
-        if blocking:
-            cls.poll_message_set(blocking[0])
-            return False
-        return True
-
-    def execute(self, context):
-        settings = context.scene.sdg_settings
-        apply_scene(context, settings, 0)
-        base = image_base(settings, 0)
-        render_still(context, settings, base)
-        self.report({'INFO'}, f"Rendered to {base}")
-        return {'FINISHED'}
-
 class SDG_OT_refresh_lights(bpy.types.Operator):
     bl_idname = "sdg.refresh_lights"
     bl_label = "Refresh"
@@ -65,19 +44,65 @@ class SDG_OT_refresh_classes(bpy.types.Operator):
 class SDG_OT_generate(bpy.types.Operator):
     bl_idname = "sdg.generate"
     bl_label = "Generate Dataset"
-    bl_description = "Render the dataset"
+    bl_description = "Render the whole dataset. Press Esc to cancel between images"
+
+    running = False
+    _timer = None
+    _index = 0
 
     @classmethod
     def poll(cls, context):
-        blocking, warnings =  get_problems(context.scene.sdg_settings)
+        if cls.running:
+            cls.poll_message_set("A run is already in progress")
+            return False
+        blocking, warnings = get_problems(context.scene.sdg_settings)
         if blocking:
             cls.poll_message_set(blocking[0])
             return False
         return True
 
-    def execute(self, context):
-        self.report({'INFO'}, "Generate isn't built yet, but the button works")
-        return {'FINISHED'}
+    def invoke(self, context, event):
+        settings = context.scene.sdg_settings
+        wm = context.window_manager
+
+        self.index = 0
+        self._timer = wm.event_timer_add(0.1, window=context.window)
+        wm.progress_begin(0, settings.num_images)
+        wm.modal_handler_add(self)
+        SDG_OT_generate.running = True
+        return {'RUNNING_MODAL'}
+
+    def modal(self, context, event):
+        settings = context.scene.sdg_settings
+
+        if event.type == 'ESC' and event.value == 'PRESS':
+            return self.finish(context, f"Cancelled after {self._index} image(s)", cancelled=True)
+
+        if event.type != 'TIMER':
+            return {'PASS_THROUGH'}
+
+        if self._index >= settings.num_images:
+            return self.finish(context, f"Done: {self._index} image(s) rendered")
+
+        try:
+            apply_scene(context, settings, self._index)
+            render_still(context, settings, image_base(settings, self._index))
+        except Exception as error:
+            return self.finish(context, f"Stopped by an error: {error}", cancelled=True, level='ERROR')
+
+        self._index += 1
+        context.window_manager.progress_update(self._index)
+        return {'RUNNING_MODAL'}
+
+    def finish(self, context, message, cancelled=False, level='INFO'):
+        wm = context.window_manager
+        wm.event_timer_remove(self._timer)
+        wm.progress_end()
+        reset_scene()
+        SDG_OT_generate.running = False
+        self.report({level}, message)
+        return {'CANCELLED'} if cancelled else {'FINISHED'}
+    
 
 class SDG_OT_preview(bpy.types.Operator):
     bl_idname = "sdg.preview"
@@ -128,12 +153,10 @@ class SDG_OT_new_seed(bpy.types.Operator):
         return {'FINISHED'}
 
 classes = (
-    SDG_OT_render_test,
     SDG_OT_refresh_lights,
     SDG_OT_refresh_classes,
     SDG_OT_preview,
     SDG_OT_clear_preview,
     SDG_OT_generate,
     SDG_OT_new_seed,
-
 )
