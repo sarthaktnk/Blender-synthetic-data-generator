@@ -226,7 +226,7 @@ class SDG_PT_run(SDG_PanelBase, bpy.types.Panel):
         row = layout.row(align=True)
         row.operator("sdg.preview", icon='FILE_REFRESH')
         row.operator("sdg.clear_preview", icon='X')
-        
+        layout.operator("sdg.boxes_test", icon='SHADING_BBOX')
 
         row = layout.row()
         row.scale_y = 1.8

@@ -1,5 +1,6 @@
 import os
 import bpy
+from contextlib import contextmanager
 
 
 def image_base(settings, index):
@@ -8,11 +9,22 @@ def image_base(settings, index):
     return os.path.join(folder, "images", f"image_{index:05d}")
 
 
-def render_still(context, settings, base_path):
-    """Render the current scene to base_path, then restore the render settings."""
+def image_path(settings, index):
+    """The full path of the rendered file, with its extension."""
+    ext = ".png" if settings.image_format == 'PNG' else ".jpg"
+    return image_base(settings, index) + ext
+
+
+def debug_path(settings, index):
+    folder = bpy.path.abspath(settings.output_dir)
+    return os.path.join(folder, "debug", f"debug_{index:05d}.png")
+
+@contextmanager
+def render_settings(context, settings):
+    """Apply the add-on's render settings, and put the user's back afterwards."""
     scene = context.scene
     render = scene.render
-
+    
     saved = {
         "filepath": render.filepath,
         "x": render.resolution_x,
@@ -21,22 +33,25 @@ def render_still(context, settings, base_path):
         "format": render.image_settings.file_format,
         "camera": scene.camera,
     }
-
-    os.makedirs(os.path.dirname(base_path), exist_ok=True)
-
     try:
-        render.filepath = base_path
-        render.resolution_x = settings.res_x
-        render.resolution_y = settings.res_y
-        render.resolution_percentage = 100
-        render.image_settings.file_format = settings.image_format
-        scene.camera = settings.camera
-
-        bpy.ops.render.render(write_still=True)
+            render.resolution_x = settings.res_x
+            render.resolution_y = settings.res_y
+            render.resolution_percentage = 100
+            render.image_settings.file_format = settings.image_format
+            scene.camera = settings.camera
+            yield
     finally:
-        render.filepath = saved["filepath"]
-        render.resolution_x = saved["x"]
-        render.resolution_y = saved["y"]
-        render.resolution_percentage = saved["percent"]
-        render.image_settings.file_format = saved["format"]
-        scene.camera = saved["camera"]
+            render.filepath = saved["filepath"]
+            render.resolution_x = saved["x"]
+            render.resolution_y = saved["y"]
+            render.resolution_percentage = saved["percent"]
+            render.image_settings.file_format = saved["format"]
+            scene.camera = saved["camera"]
+    
+
+def render_still(context, settings, base_path):
+    """Render the current scene to base_path"""
+    os.makedirs(os.path.dirname(base_path), exist_ok=True)
+    with render_settings(context, settings):
+         context.scene.render.filepath = base_path
+         bpy.ops.render.render(write_still=True)

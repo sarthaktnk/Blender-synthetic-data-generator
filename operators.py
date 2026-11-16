@@ -7,7 +7,36 @@ from .light_list import refresh_lights
 from .lights import randomize_lights, restore_lights
 from .camera import randomize_camera, restore_camera
 from .pipeline import apply_scene, reset_scene
-from .render import image_base, render_still
+from .render import image_base, render_still, render_settings, image_path, debug_path
+from .annotations import compute_boxes, save_debug_image
+
+class SDG_OT_boxes_test(bpy.types.Operator):
+    bl_idname = "sdg.boxes_test"
+    bl_label = "Boxes Test"
+    bl_description = "Temporary: render image 0 and a copy with boxes drawn on it"
+
+    @classmethod
+    def poll(cls, context):
+        blocking, warnings = get_problems(context.scene.sdg_settings)
+        if blocking:
+            cls.poll_message_set(blocking[0])
+            return False
+        return True
+
+    def execute(self, context):
+        settings = context.scene.sdg_settings
+
+        with render_settings(context, settings):
+            spawned, failed, lights = apply_scene(context, settings, 0)
+            boxes = compute_boxes(context, settings, spawned)
+            render_still(context, settings, image_base(settings, 0))
+
+        for box in boxes:
+            print("box:", box)
+        save_debug_image(image_path(settings, 0), boxes, debug_path(settings, 0))
+
+        self.report({'INFO'}, f"{len(boxes)} box(es) for {len(spawned)} object(s)")
+        return {'FINISHED'}
 
 
 class SDG_OT_refresh_lights(bpy.types.Operator):
@@ -153,6 +182,7 @@ class SDG_OT_new_seed(bpy.types.Operator):
         return {'FINISHED'}
 
 classes = (
+    SDG_OT_boxes_test,
     SDG_OT_refresh_lights,
     SDG_OT_refresh_classes,
     SDG_OT_preview,
