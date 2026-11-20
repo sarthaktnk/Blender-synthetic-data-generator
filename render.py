@@ -19,6 +19,12 @@ def debug_path(settings, index):
     folder = bpy.path.abspath(settings.output_dir)
     return os.path.join(folder, "debug", f"debug_{index:05d}.png")
 
+
+def label_path(settings, index):
+     folder = bpy.path.abspath(settings.output_dir)
+     return os.path.join(folder, "labels", f"image_{index:05d}.txt")
+
+
 @contextmanager
 def render_settings(context, settings):
     """Apply the add-on's render settings, and put the user's back afterwards."""

@@ -1,3 +1,4 @@
+import os
 import bpy
 import random
 from .class_list import refresh_classes
@@ -7,36 +8,9 @@ from .light_list import refresh_lights
 from .lights import randomize_lights, restore_lights
 from .camera import randomize_camera, restore_camera
 from .pipeline import apply_scene, reset_scene
-from .render import image_base, render_still, render_settings, image_path, debug_path
+from .render import image_base, render_still, render_settings, image_path, debug_path, label_path
+from .labels import write_yolo_file, write_classes, class_names
 from .annotations import compute_boxes, save_debug_image
-
-class SDG_OT_boxes_test(bpy.types.Operator):
-    bl_idname = "sdg.boxes_test"
-    bl_label = "Boxes Test"
-    bl_description = "Temporary: render image 0 and a copy with boxes drawn on it"
-
-    @classmethod
-    def poll(cls, context):
-        blocking, warnings = get_problems(context.scene.sdg_settings)
-        if blocking:
-            cls.poll_message_set(blocking[0])
-            return False
-        return True
-
-    def execute(self, context):
-        settings = context.scene.sdg_settings
-
-        with render_settings(context, settings):
-            spawned, failed, lights = apply_scene(context, settings, 0)
-            boxes = compute_boxes(context, settings, spawned)
-            render_still(context, settings, image_base(settings, 0))
-
-        for box in boxes:
-            print("box:", box)
-        save_debug_image(image_path(settings, 0), boxes, debug_path(settings, 0))
-
-        self.report({'INFO'}, f"{len(boxes)} box(es) for {len(spawned)} object(s)")
-        return {'FINISHED'}
 
 
 class SDG_OT_refresh_lights(bpy.types.Operator):
@@ -94,6 +68,13 @@ class SDG_OT_generate(bpy.types.Operator):
         settings = context.scene.sdg_settings
         wm = context.window_manager
 
+        try:
+            folder = bpy.path.abspath(settings.output_dir)
+            write_classes(os.path.join(folder, "classes.txt"), class_names(settings))
+        except OSError as error:
+            self.report({'ERROR'}, f"Can't write to the output folder: {error}")
+            return {'CANCELLED'}
+
         self.index = 0
         self._timer = wm.event_timer_add(0.1, window=context.window)
         wm.progress_begin(0, settings.num_images)
@@ -114,8 +95,17 @@ class SDG_OT_generate(bpy.types.Operator):
             return self.finish(context, f"Done: {self._index} image(s) rendered")
 
         try:
-            apply_scene(context, settings, self._index)
-            render_still(context, settings, image_base(settings, self._index))
+            with render_settings(context, settings):
+                spawned, failed, lights = apply_scene(context, settings, self._index)
+                boxes = compute_boxes(context, settings, spawned)
+                render_still(context, settings, image_base(settings, self._index))
+
+            write_yolo_file(label_path(settings, self._index), boxes)
+            if settings.save_debug:
+                save_debug_image(
+                    image_path(settings, self._index), boxes,
+                    debug_path(settings, self._index)
+                )
         except Exception as error:
             return self.finish(context, f"Stopped by an error: {error}", cancelled=True, level='ERROR')
 
@@ -182,7 +172,6 @@ class SDG_OT_new_seed(bpy.types.Operator):
         return {'FINISHED'}
 
 classes = (
-    SDG_OT_boxes_test,
     SDG_OT_refresh_lights,
     SDG_OT_refresh_classes,
     SDG_OT_preview,

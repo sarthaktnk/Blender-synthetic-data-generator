@@ -123,6 +123,10 @@ class SDG_Settings(bpy.types.PropertyGroup):
         ],
         default='PNG',
     )
+    save_debug: BoolProperty(
+        name="Save debug images", default=False,
+        description="Also save a copy of each image with the boxes drawn on it",
+    )
     subjects: PointerProperty(
         name="Subjects",
         type=bpy.types.Collection,

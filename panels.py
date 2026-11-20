@@ -206,6 +206,7 @@ class SDG_PT_output(SDG_PanelBase, bpy.types.Panel):
 
         layout.prop(settings, "image_format")
         layout.prop(settings, "output_dir")
+        layout.prop(settings, "save_debug")
 
 
 class SDG_PT_run(SDG_PanelBase, bpy.types.Panel):
@@ -226,7 +227,6 @@ class SDG_PT_run(SDG_PanelBase, bpy.types.Panel):
         row = layout.row(align=True)
         row.operator("sdg.preview", icon='FILE_REFRESH')
         row.operator("sdg.clear_preview", icon='X')
-        layout.operator("sdg.boxes_test", icon='SHADING_BBOX')
 
         row = layout.row()
         row.scale_y = 1.8
