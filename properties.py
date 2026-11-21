@@ -138,6 +138,7 @@ class SDG_Settings(bpy.types.PropertyGroup):
         subtype='PERCENTAGE',
         description="Share of images set aside for validation",
     )
+    last_stats: StringProperty(default="")
     subjects: PointerProperty(
         name="Subjects",
         type=bpy.types.Collection,

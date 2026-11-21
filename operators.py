@@ -1,6 +1,7 @@
 import os
 import bpy
 import random
+import json
 from .class_list import refresh_classes
 from .checks import get_problems
 from .spawn import (spawn_instances, clear_spawned, hide_originals, restore_originals)
@@ -10,10 +11,10 @@ from .camera import randomize_camera, restore_camera
 from .pipeline import apply_scene, reset_scene
 from .render import image_base, render_still, render_settings, image_path, debug_path, label_path
 from .labels import write_yolo_file, write_classes, class_names, write_yaml
-from .split import count_val
+from .split import count_val, split_of
 from .annotations import compute_boxes, save_debug_image
 from .files import clear_dataset
-
+from .stats import new_stats, add_image
 
 class SDG_OT_refresh_lights(bpy.types.Operator):
     bl_idname = "sdg.refresh_lights"
@@ -83,6 +84,9 @@ class SDG_OT_generate(bpy.types.Operator):
             self.report({'ERROR'}, f"Can't write to the output folder: {error}")
             return {'CANCELLED'}
 
+        self._stats = new_stats()
+        settings.last_stats = ""
+
         self.index = 0
         self._timer = wm.event_timer_add(0.1, window=context.window)
         wm.progress_begin(0, settings.num_images)
@@ -109,6 +113,8 @@ class SDG_OT_generate(bpy.types.Operator):
                 render_still(context, settings, image_base(settings, self._index))
 
             write_yolo_file(label_path(settings, self._index), boxes)
+            add_image(self._stats, boxes, len(spawned), failed, split_of(self._index, settings.val_split))
+            settings.last_stats = json.dumps(self._stats)
             if settings.save_debug:
                 save_debug_image(
                     image_path(settings, self._index), boxes,

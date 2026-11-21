@@ -1,4 +1,6 @@
 import bpy
+import json
+from .stats import balance_ratio
 from .checks import get_problems
 
 class SDG_UL_classes(bpy.types.UIList):
@@ -211,6 +213,59 @@ class SDG_PT_output(SDG_PanelBase, bpy.types.Panel):
         layout.prop(settings, "save_debug")
 
 
+class SDG_PT_stats(SDG_PanelBase, bpy.types.Panel):
+    bl_label = "Last Run"
+    bl_idname = "SDG_PT_stats"
+
+    @classmethod
+    def poll(cls, context):
+        return bool(context.scene.sdg_settings.last_stats)
+
+    def draw(self, context):
+        settings = context.scene.sdg_settings
+        layout = self.layout
+
+        try:
+            stats = json.loads(settings.last_stats)
+        except ValueError:
+            layout.label(text="Statistics unreadable", icon='ERROR')
+            return
+
+        layout.label(
+            text=f"{stats['images']} images ({stats['train']} train, {stats['val']} val)",
+            icon='IMAGE_DATA',
+        )
+
+        counts = {
+            entry.class_id: stats["objects"].get(str(entry.class_id), 0)
+            for entry in settings.class_list
+        }
+        biggest = max(counts.values(), default=0)
+
+        box = layout.box()
+        box.label(text="Objects per class")
+        for entry in settings.class_list:
+            n = counts[entry.class_id]
+
+            box.progress(
+                text=f"{entry.name}: {n}",
+                factor=(n / biggest) if biggest else 0.0,
+            )
+
+        ratio = balance_ratio(counts)
+        if ratio is not None and ratio < 0.5:
+            layout.label(text="Classes are unbalanced", icon='ERROR')
+
+        labeled = sum(counts.values())
+        out_of_view = max(0, stats["spawned"] - labeled)
+        if stats["empty"]:
+            layout.label(text=f"{stats['empty']} image(s) with no objects", icon='INFO')
+        if out_of_view:
+            layout.label(text=f"{out_of_view} object(s) were out of view", icon='INFO')
+        if stats["dropped"]:
+            layout.label(text=f"{stats['dropped']} object(s) did not fit", icon='INFO')
+
+
 class SDG_PT_run(SDG_PanelBase, bpy.types.Panel):
     bl_label = "Run"
     bl_idname = "SDG_PT_run"
@@ -243,5 +298,6 @@ classes = (
     SDG_PT_lights,
     SDG_PT_camera,
     SDG_PT_output,
+    SDG_PT_stats,
     SDG_PT_run,
 )
