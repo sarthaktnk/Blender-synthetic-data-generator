@@ -1,5 +1,6 @@
 import os
 import bpy
+from .split import count_val
 
 
 def get_problems(settings):
@@ -72,5 +73,9 @@ def get_problems(settings):
             blocking.append("Output folder is not writable")
 
     if settings.num_images >= 2000:
-        warnings.append("Large batch: this may take a long time")  
+        warnings.append("Large batch: this may take a long time")
+
+    if count_val(settings.num_images, settings.val_split) == 0:
+        warnings.append("No validation images (split too small or 0%)")
+          
     return blocking, warnings

@@ -9,7 +9,8 @@ from .lights import randomize_lights, restore_lights
 from .camera import randomize_camera, restore_camera
 from .pipeline import apply_scene, reset_scene
 from .render import image_base, render_still, render_settings, image_path, debug_path, label_path
-from .labels import write_yolo_file, write_classes, class_names
+from .labels import write_yolo_file, write_classes, class_names, write_yaml
+from .split import count_val
 from .annotations import compute_boxes, save_debug_image
 
 
@@ -71,6 +72,8 @@ class SDG_OT_generate(bpy.types.Operator):
         try:
             folder = bpy.path.abspath(settings.output_dir)
             write_classes(os.path.join(folder, "classes.txt"), class_names(settings))
+            has_val = count_val(settings.num_images, settings.val_split) > 0
+            write_yaml(os.path.join(folder, "dataset.yaml"), class_names(settings), has_val)
         except OSError as error:
             self.report({'ERROR'}, f"Can't write to the output folder: {error}")
             return {'CANCELLED'}

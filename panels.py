@@ -205,6 +205,7 @@ class SDG_PT_output(SDG_PanelBase, bpy.types.Panel):
         row.prop(settings, "res_y")
 
         layout.prop(settings, "image_format")
+        layout.prop(settings, "val_split", slider=True)
         layout.prop(settings, "output_dir")
         layout.prop(settings, "save_debug")
 

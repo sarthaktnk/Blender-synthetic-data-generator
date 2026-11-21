@@ -1,12 +1,14 @@
 import os
 import bpy
 from contextlib import contextmanager
+from .split import split_of
 
 
 def image_base(settings, index):
     """The file path WITHOUT an extension. Blender adds .png or .jpg itself."""
     folder = bpy.path.abspath(settings.output_dir)
-    return os.path.join(folder, "images", f"image_{index:05d}")
+    part = split_of(index, settings.val_split)
+    return os.path.join(folder, "images", part, f"image_{index:05d}")
 
 
 def image_path(settings, index):
@@ -22,7 +24,8 @@ def debug_path(settings, index):
 
 def label_path(settings, index):
      folder = bpy.path.abspath(settings.output_dir)
-     return os.path.join(folder, "labels", f"image_{index:05d}.txt")
+     part = split_of(index, settings.val_split)
+     return os.path.join(folder, "labels", part, f"image_{index:05d}.txt")
 
 
 @contextmanager

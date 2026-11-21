@@ -127,6 +127,11 @@ class SDG_Settings(bpy.types.PropertyGroup):
         name="Save debug images", default=False,
         description="Also save a copy of each image with the boxes drawn on it",
     )
+    val_split: IntProperty(
+        name="Validation", default=20, min=0, max=50,
+        subtype='PERCENTAGE',
+        description="Share of images set aside for validation",
+    )
     subjects: PointerProperty(
         name="Subjects",
         type=bpy.types.Collection,
