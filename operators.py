@@ -12,6 +12,7 @@ from .render import image_base, render_still, render_settings, image_path, debug
 from .labels import write_yolo_file, write_classes, class_names, write_yaml
 from .split import count_val
 from .annotations import compute_boxes, save_debug_image
+from .files import clear_dataset
 
 
 class SDG_OT_refresh_lights(bpy.types.Operator):
@@ -71,6 +72,10 @@ class SDG_OT_generate(bpy.types.Operator):
 
         try:
             folder = bpy.path.abspath(settings.output_dir)
+            if settings.clear_old:
+                removed = clear_dataset(folder)
+                if removed:
+                    self.report({'INFO'}, f"Removed {removed} old dataset file(s)")
             write_classes(os.path.join(folder, "classes.txt"), class_names(settings))
             has_val = count_val(settings.num_images, settings.val_split) > 0
             write_yaml(os.path.join(folder, "dataset.yaml"), class_names(settings), has_val)

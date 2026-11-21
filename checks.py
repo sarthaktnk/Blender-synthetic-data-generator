@@ -1,6 +1,7 @@
 import os
 import bpy
 from .split import count_val
+from .files import has_dataset_files
 
 
 def get_problems(settings):
@@ -71,11 +72,16 @@ def get_problems(settings):
         full = bpy.path.abspath(folder)
         if os.path.isdir(full) and not os.access(full, os.W_OK):
             blocking.append("Output folder is not writable")
+        if has_dataset_files(full):
+            if settings.clear_old:
+                warnings.append("Folder has an old dataset: it will be replaced")
+            else:
+                warnings.append("Folder has old files: new ones will mix with them")
 
     if settings.num_images >= 2000:
         warnings.append("Large batch: this may take a long time")
 
     if count_val(settings.num_images, settings.val_split) == 0:
         warnings.append("No validation images (split too small or 0%)")
-          
+
     return blocking, warnings

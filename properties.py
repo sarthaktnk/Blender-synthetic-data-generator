@@ -113,6 +113,12 @@ class SDG_Settings(bpy.types.PropertyGroup):
         name="Folder", subtype='DIR_PATH', default="//synthetic_data",
         description="Where the dataset is written. // means next to the .blend file"
     )
+    clear_old: BoolProperty(
+        name="Replace previous dataset", default=True,
+        description="Before generating, delete old image_#####, debug_#####,"
+                    "classes.txt and dataset.yaml files in the output folder."
+                    "Other files are never touched",
+    )
     res_x: IntProperty(name="Width", default=1280, min=64, max=8192, subtype='PIXEL')
     res_y: IntProperty(name="Height", default=720, min=64, max=8192, subtype='PIXEL')
     image_format: EnumProperty(
