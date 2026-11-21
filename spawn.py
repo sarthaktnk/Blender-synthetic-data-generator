@@ -91,10 +91,9 @@ def spawn_instances(context, settings, image_index):
     context.scene.collection.children.link(holder)
 
     rng = make_rng(settings.seed, image_index, "objects")
-    spawned = []
-    placed = []
-    failed = 0
 
+    # ---- Phase-1: decide what to place
+    requests = []
     for entry in settings.class_list:
         if entry.collection is None:
             continue
@@ -113,37 +112,62 @@ def spawn_instances(context, settings, image_index):
             rot_mode = settings.rotation_mode
             s_min, s_max = settings.scale_min, settings.scale_max
 
-        for _ in range(count):
+        for n in range(count):
             template = rng.choice(templates)
-            obj = template.copy()
-            obj.name = f"{entry.name}_inst"
-            obj["sdg_class_id"] = entry.class_id
 
-            if HIDDEN_MARK in obj:
-                del obj[HIDDEN_MARK]
+            requests.append({
+                "entry": entry,
+                "template": template,
+                "required": n < entry.count_min,
+                "factor": rng.uniform(s_min, s_max),
+                "rotation": pick_rotation(rng, template, rot_mode),
+                "area_l": area_l,
+                "area_w": area_w,
+            })
 
-            if RENDER_MARK in obj:
-                obj.hide_render = False
-                del obj[RENDER_MARK]
+    # ---- Phase-2: Mixing of objects
+    required = [r for r in requests if r["required"]]
+    optional = [r for r in requests if not r["required"]]
+    rng.shuffle(required)
+    rng.shuffle(optional)
+    ordered = required + optional
 
-            if settings.use_placement:
-                factor = rng.uniform(s_min, s_max)
-                obj.scale = template.scale * factor
-                obj.rotation_euler = pick_rotation(rng, template, rot_mode)
+    # ---- Phase-3: placing objects 
+    spawned = []
+    placed = []
+    failed = 0
 
-                radius = max(obj.dimensions) / 2
-                position = find_position(rng, placed, radius, area_l, area_w, settings.spacing)
+    for req in ordered:
+        entry = req["entry"]
+        template = req["template"]
 
-                if position is None:
-                    bpy.data.objects.remove(obj)
-                    failed += 1
-                    continue
+        obj = template.copy()
+        obj.name = f"{entry.name}_inst"
+        obj["sdg_class_id"] = entry.class_id
 
-                x, y = position
-                obj.location = (x, y, template.location.z)
-                placed.append((x, y, radius))
+        if HIDDEN_MARK in obj:
+            del obj[HIDDEN_MARK]
+        if RENDER_MARK in obj:
+            obj.hide_render = False
+            del obj[RENDER_MARK]
 
-            holder.objects.link(obj)
-            spawned.append(obj)
+        if settings.use_placement:
+            obj.scale = template.scale * req["factor"]
+            obj.rotation_euler = req["rotation"]
 
-    return spawned, failed  
+            radius = max(obj.dimensions) / 2
+            position = find_position(rng, placed, radius, req["area_l"], req["area_w"], settings.spacing,)
+
+            if position is None:
+                bpy.data.objects.remove(obj)
+                failed += 1
+                continue
+
+            x, y = position
+            obj.location = (x, y, template.location.z)
+            placed.append((x, y, radius))
+
+        holder.objects.link(obj)
+        spawned.append(obj)
+
+    return spawned, failed
