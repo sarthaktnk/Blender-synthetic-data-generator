@@ -5,6 +5,7 @@ from bpy.props import (
 from .class_list import refresh_classes
 from .light_list import refresh_lights
 from math import pi, radians
+from .overlay import redraw_viewports
 
 ROTATION_ITEMS = [
     ('ANY', "Any",  "Random rotation on every axis"),
@@ -78,6 +79,9 @@ class SDG_LightEntry(bpy.types.PropertyGroup):
 def update_environment(self, context):
     refresh_lights(self)
 
+def update_overlay(self, context):
+    redraw_viewports(context)
+
 
 class SDG_Settings(bpy.types.PropertyGroup):
 
@@ -139,6 +143,11 @@ class SDG_Settings(bpy.types.PropertyGroup):
         description="Share of images set aside for validation",
     )
     last_stats: StringProperty(default="")
+    show_overlay: BoolProperty(
+        name="Show boxes in viewport", default=True,
+        update=update_overlay,
+        description="Draw a box around every preview object, colored by class",
+    )
     subjects: PointerProperty(
         name="Subjects",
         type=bpy.types.Collection,
