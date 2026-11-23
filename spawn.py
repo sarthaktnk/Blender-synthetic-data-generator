@@ -27,7 +27,6 @@ def hide_originals(settings):
         if entry.collection is None:
             continue
         for obj in list(entry.collection.all_objects):
-            print("checking:", repr(obj), "in class", entry.name)
             if not obj.hide_render:
                 obj.hide_render = True
                 obj[RENDER_MARK] = True

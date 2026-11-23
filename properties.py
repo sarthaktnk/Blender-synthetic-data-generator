@@ -6,6 +6,7 @@ from .class_list import refresh_classes
 from .light_list import refresh_lights
 from math import pi, radians
 from .overlay import redraw_viewports
+from .pools import add_material
 
 ROTATION_ITEMS = [
     ('ANY', "Any",  "Random rotation on every axis"),
@@ -81,6 +82,24 @@ def update_environment(self, context):
 
 def update_overlay(self, context):
     redraw_viewports(context)
+
+
+class SDG_PoolMaterial(bpy.types.PropertyGroup):
+    material: PointerProperty(type=bpy.types.Material)
+
+
+class SDG_Pool(bpy.types.PropertyGroup):
+    name: StringProperty(name="Pool", default="Pool")
+    materials: CollectionProperty(type=SDG_PoolMaterial)
+    material_index: IntProperty(default=0)
+
+
+def update_add_material(self, context):
+    if self.add_material is None:
+        return
+    if self.pools:
+        add_material(self.pools[self.pool_index], self.add_material)
+    self.add_material = None
 
 
 class SDG_Settings(bpy.types.PropertyGroup):
@@ -240,8 +259,24 @@ class SDG_Settings(bpy.types.PropertyGroup):
     aperture_min: FloatProperty(name="Min", default=2.8, min=0.5)
     aperture_max: FloatProperty(name="Max", default=8.0, min=0.5)
 
+    # --- Materials ---
+    use_materials: BoolProperty(
+        name="Materials", default=True,
+        description="Randomize materials with the rules below",
+    )
+    pools: CollectionProperty(type=SDG_Pool)
+    pool_index: IntProperty(default=0)
+    add_material: PointerProperty(
+        name="Add material", type=bpy.types.Material,
+        update=update_add_material,
+        description="Add a material from this file to the selected pool"
+    )
+
 classes = (
     SDG_ClassEntry,
     SDG_LightEntry,
+    SDG_PoolMaterial,
+    SDG_Pool,
     SDG_Settings,
+    
 )

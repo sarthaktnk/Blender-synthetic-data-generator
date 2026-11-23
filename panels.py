@@ -30,12 +30,30 @@ class SDG_UL_lights(bpy.types.UIList):
         row.label(text=item.name, icon='LIGHT')
         side = row.row()
         side.alignment = 'RIGHT'
-        side.label(text=item.obj.data.type.title() if item.obj else "?")
+        side.label(text=item.obj.data.type.title() if item.obj else "?") 
+
+
+class SDG_UL_pools(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        row = layout.row(align=True)
+        row.prop(item, "name", text="", emboss=False, icon='MATERIAL')
+        side = row.row()
+        side.alignment = 'RIGHT'
+        side.label(text=str(len(item.materials)))
+
+class SDG_UL_pool_materials(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        if item.material:
+            layout.label(text=item.material.name, icon='MATERIAL')
+        else:
+            layout.label(text="(missing material)", icon='ERROR')
+        
 
 class SDG_PanelBase:
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = 'Synthetic Data'
+
 
 class SDG_PT_setup(SDG_PanelBase, bpy.types.Panel):
     bl_label = "Setup"
@@ -109,6 +127,50 @@ class SDG_PT_placement(SDG_PanelBase, bpy.types.Panel):
                 row = layout.row(align=True)
                 row.prop(entry, "scale_min")
                 row.prop(entry, "scale_max")
+
+
+class SDG_PT_materials(SDG_PanelBase, bpy.types.Panel):
+    bl_label = "Materials"
+    bl_idname = "SDG_PT_materials"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw_header(self, context):
+        self.layout.prop(context.scene.sdg_settings, "use_materials", text="")
+
+    def draw(self, context):
+        settings = context.scene.sdg_settings
+        layout = self.layout
+        layout.active = settings.use_materials
+
+        layout.label(text="Pools")
+        rows = max(2, min(len(settings.pools), 5))
+        layout.template_list(
+            "SDG_UL_pools", "",
+            settings, "pools",
+            settings, "pool_index",
+            rows=rows,
+        )
+        row = layout.row(align=True)
+        row.operator("sdg.pool_add", icon='ADD')
+        row.operator("sdg.pool_remove", icon='REMOVE')
+
+        if not settings.pools:
+            layout.label(text="No pools yet. Add one to begin.")
+            return
+
+        pool = settings.pools[settings.pool_index]
+        layout.separator()
+        layout.label(text=f"Materials in '{pool.name}'")
+        rows = max(2, min(len(pool.materials), 6))
+        layout.template_list(
+            "SDG_UL_pool_materials", "",
+            pool, "materials",
+            pool, "material_index",
+            rows=rows,
+        )
+        row = layout.row(align=True)
+        row.prop(settings, "add_material", text="Add")
+        row.operator("sdg.pool_material_remove", text="", icon='REMOVE')
 
 
 class SDG_PT_lights(SDG_PanelBase, bpy.types.Panel):
@@ -295,8 +357,11 @@ classes = (
     SDG_UL_classes,
     SDG_UL_overrides,
     SDG_UL_lights,
+    SDG_UL_pools,
+    SDG_UL_pool_materials,
     SDG_PT_setup,
     SDG_PT_placement,
+    SDG_PT_materials,
     SDG_PT_lights,
     SDG_PT_camera,
     SDG_PT_output,

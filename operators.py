@@ -15,6 +15,7 @@ from .split import count_val, split_of
 from .annotations import compute_boxes, save_debug_image
 from .files import clear_dataset
 from .stats import new_stats, add_image
+from .pools import unique_pool_name
 
 class SDG_OT_refresh_lights(bpy.types.Operator):
     bl_idname = "sdg.refresh_lights"
@@ -185,6 +186,55 @@ class SDG_OT_new_seed(bpy.types.Operator):
         context.scene.sdg_settings.seed = random.randint(0, 999999)
         return {'FINISHED'}
 
+
+class SDG_OT_pool_add(bpy.types.Operator):
+    bl_idname = "sdg.pool_add"
+    bl_label = "Add Pool"
+    bl_description = "Create a new, empty pool"
+
+    def execute(self, context):
+        settings = context.scene.sdg_settings
+        pool = settings.pools.add()
+        pool.name = unique_pool_name(settings)
+        settings.pool_index = len(settings.pools) - 1
+        return {'FINISHED'}
+
+
+class SDG_OT_pool_remove(bpy.types.Operator):
+    bl_idname = "sdg.pool_remove"
+    bl_label = "Remove"
+    bl_description = "Remove the selected pool"
+
+    @classmethod
+    def poll(cls, context):
+        return len(context.scene.sdg_settings.pools) > 0
+
+    def execute(self, context):
+        settings = context.scene.sdg_settings
+        index = settings.pool_index
+        settings.pools.remove(index)
+        settings.pool_index = max(0, min(index, len(settings.pools) - 1))
+        return {'FINISHED'}
+
+
+class SDG_OT_pool_material_remove(bpy.types.Operator):
+    bl_idname = "sdg.pool_material_remove"
+    bl_label = "Remove Material"
+    bl_description = "Take the selected material out of this pool"
+
+    @classmethod
+    def poll(cls, context):
+        settings = context.scene.sdg_settings
+        return bool(settings.pools) and bool(settings.pools[settings.pool_index].materials)
+
+    def execute(self, context):
+        settings = context.scene.sdg_settings
+        pool = settings.pools[settings.pool_index]
+        index = pool.material_index
+        pool.materials.remove(index)
+        pool.material_index = max(0, min(index, len(pool.materials) - 1))
+        return {'FINISHED'}
+    
 classes = (
     SDG_OT_refresh_lights,
     SDG_OT_refresh_classes,
@@ -192,4 +242,7 @@ classes = (
     SDG_OT_clear_preview,
     SDG_OT_generate,
     SDG_OT_new_seed,
+    SDG_OT_pool_add,
+    SDG_OT_pool_remove,
+    SDG_OT_pool_material_remove
 )
