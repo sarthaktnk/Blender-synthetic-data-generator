@@ -1,5 +1,6 @@
 import bpy
 import gpu
+import blf
 from gpu_extras.batch import batch_for_shader
 from bpy_extras.view3d_utils import location_3d_to_region_2d
 from mathutils import Vector
@@ -23,6 +24,7 @@ def _draw():
 
 
     by_class = {}
+    labels = []
 
     for obj in holder.objects:
         corners = [obj.matrix_world @ Vector(c) for c in obj.bound_box]
@@ -35,7 +37,9 @@ def _draw():
         y0 = min(p.y for p in points)
         y1 = max(p.y for p in points)
 
-        lines = by_class.setdefault(obj.get("sdg_class_id",0), [])
+        class_id = obj.get("sdg_class_id", 0)
+        lines = by_class.setdefault(class_id, [])
+        labels.append((class_id, x0, y1))
 
         for dx, dy in ((0, 0), (1, 0), (0, 1), (1, 1)):
             a = (x0 + dx, y0 + dy)
@@ -49,6 +53,34 @@ def _draw():
         batch = batch_for_shader(shader, 'LINES', {"pos": coords})
         shader.uniform_float("color", PALETTE[class_id % len(PALETTE)])
         batch.draw(shader)
+
+    if not settings.show_labels:
+        return
+
+    names = {entry.class_id: entry.name for entry in settings.class_list}
+    font_id = 0
+    blf.size(font_id, 14 * context.preferences.system.ui_scale)
+    pad = 3
+
+    for class_id, x, y in labels:
+        text = names.get(class_id, f"class {class_id}")
+        w, h = blf.dimensions(font_id, text)
+
+        ly = y + 2
+        if ly + h + 2 * pad > region.height:
+            ly = y - h - 2 * pad -2
+
+        verts = (
+            (x, ly), (x + w + 2 * pad, ly),
+            (x, ly + h + 2 *pad), (x + w + 2 * pad, ly + h + 2 * pad),
+        )
+        batch = batch_for_shader(shader, 'TRIS', {"pos": verts}, indices=((0, 1, 2), (2, 1, 3)))
+        shader.uniform_float("color", PALETTE[class_id % len(PALETTE)])
+        batch.draw(shader)
+
+        blf.color(font_id, 0, 0, 0, 1)
+        blf.position(font_id, x + pad, ly + pad, 0)
+        blf.draw(font_id, text)
 
 
 def draw_boxes():

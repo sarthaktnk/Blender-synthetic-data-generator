@@ -281,6 +281,7 @@ class SDG_PT_run(SDG_PanelBase, bpy.types.Panel):
             layout.label(text=message, icon='INFO')
 
         layout.prop(settings, "show_overlay")
+        layout.prop(settings, "show_labels")
         layout.label(text=f"Next preview: image {settings.preview_index}")
         row = layout.row(align=True)
         row.operator("sdg.preview", icon='FILE_REFRESH')

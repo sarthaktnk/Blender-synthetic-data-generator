@@ -148,6 +148,11 @@ class SDG_Settings(bpy.types.PropertyGroup):
         update=update_overlay,
         description="Draw a box around every preview object, colored by class",
     )
+    show_labels: BoolProperty(
+        name="Show class names", default=True,
+        update=update_overlay,
+        description="Write the class name above each box"
+    )
     subjects: PointerProperty(
         name="Subjects",
         type=bpy.types.Collection,
