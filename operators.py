@@ -234,6 +234,40 @@ class SDG_OT_pool_material_remove(bpy.types.Operator):
         pool.materials.remove(index)
         pool.material_index = max(0, min(index, len(pool.materials) - 1))
         return {'FINISHED'}
+
+
+class SDG_OT_rule_add(bpy.types.Operator):
+    bl_idname = "sdg.rule_add"
+    bl_label = "Add Rule"
+    bl_description = "Create a material rule"
+
+    def execute(self, context):
+        settings = context.scene.sdg_settings
+        rule = settings.rules.add()
+
+        if settings.class_list:
+            rule.target_class = settings.class_list[0].collection
+        if settings.pools:
+            rule.pool_name = settings.pools[settings.pool_index].name
+        settings.rule_index = len(settings.rules) - 1
+        return {'FINISHED'}
+
+
+class SDG_OT_rule_remove(bpy.types.Operator):
+    bl_idname = "sdg.rule_remove"
+    bl_label = "Remove"
+    bl_description = "Remove the selected rule"
+
+    @classmethod
+    def poll(cls, context):
+        return len(context.scene.sdg_settings.rules) > 0
+
+    def execute(self, context):
+        settings = context.scene.sdg_settings
+        index = settings.rule_index
+        settings.rules.remove(index)
+        settings.rule_index = max(0, min(index, len(settings.rules) - 1))
+        return {'FINISHED'}
     
 classes = (
     SDG_OT_refresh_lights,
@@ -244,5 +278,7 @@ classes = (
     SDG_OT_new_seed,
     SDG_OT_pool_add,
     SDG_OT_pool_remove,
-    SDG_OT_pool_material_remove
+    SDG_OT_pool_material_remove,
+    SDG_OT_rule_add,
+    SDG_OT_rule_remove
 )

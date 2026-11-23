@@ -2,6 +2,11 @@ import os
 import bpy
 from .split import count_val
 from .files import has_dataset_files
+from .pools import find_pool, rule_target
+
+def once(messages, text):
+    if text not in messages:
+        messages.append(text)
 
 
 def get_problems(settings):
@@ -83,5 +88,40 @@ def get_problems(settings):
 
     if count_val(settings.num_images, settings.val_split) == 0:
         warnings.append("No validation images (split too small or 0%)")
+
+    # --- Materials ---
+    if settings.use_materials:
+        names = [pool.name for pool in settings.pools]
+        for name in set(names):
+            if names.count(name) > 1:
+                once(blocking, f"Two pools are named '{name}'")
+
+        class_collections = [entry.collection for entry in settings.class_list]
+        seen = []
+
+        for rule in settings.rules:
+            target = rule_target(rule)
+            if target is None:
+                once(blocking, "A material rule has no target")
+                continue
+
+            label = target.name
+            if rule.target_type == 'CLASS' and target not in class_collections:
+                once(blocking, f"Rule '{label}': not a class any more")
+
+            pool = find_pool(settings, rule.pool_name)
+            if pool is None:
+                once(blocking, f"Rule '{label}': pick a pool")
+            elif len(pool.materials) == 0:
+                once(blocking, f"Pool '{pool.name}' is empty")
+            else:
+                if any(item.material is None for item in pool.materials):
+                    once(blocking, f"Pool '{pool.name}' has a missing material")
+                if len(pool.materials) == 1:
+                    once(warnings, f"Pool '{pool.name}' has only one material")
+
+            if target in seen:
+                once(warnings, f"Two rules target '{label}'")
+            seen.append(target)
 
     return blocking, warnings

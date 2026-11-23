@@ -15,8 +15,26 @@ ROTATION_ITEMS = [
     ('FIXED', "Fixed",  "Keep the original rotation"),
 ]
 
+TARGET_ITEMS = [
+    ('CLASS', "Class", "Spawned objects of one class"),
+    ('COLLECTION', "Collection", "Every object in a collection"),
+    ('OBJECT', "Object", "A single object"),
+]
+
+SLOT_ITEMS = [
+    ('FIRST', "First", "Only the first material slot"),
+    ('ALL', "All", "Every material slot")
+]
+
+
 def poll_camera(self, obj):
     return obj.type == 'CAMERA'
+
+
+def poll_class_collection(self, collection):
+    settings = bpy.context.scene.sdg_settings
+    return any(entry.collection == collection for entry in settings.class_list)
+
 
 def update_override(self, context):
     if self.use_override:
@@ -26,6 +44,7 @@ def update_override(self, context):
         self.rotation_mode = s.rotation_mode
         self.scale_min = s.scale_min
         self.scale_max = s.scale_max
+
 
 class SDG_ClassEntry(bpy.types.PropertyGroup):
 
@@ -80,6 +99,7 @@ class SDG_LightEntry(bpy.types.PropertyGroup):
 def update_environment(self, context):
     refresh_lights(self)
 
+
 def update_overlay(self, context):
     redraw_viewports(context)
 
@@ -88,11 +108,32 @@ class SDG_PoolMaterial(bpy.types.PropertyGroup):
     material: PointerProperty(type=bpy.types.Material)
 
 
+def update_pool_name(self, context):
+    settings = context.scene.sdg_settings
+    for rule in settings.rules:
+        if self.prev_name and rule.pool_name == self.prev_name:
+            rule.pool_name = self.name
+    self.prev_name = self.name
+
+
 class SDG_Pool(bpy.types.PropertyGroup):
-    name: StringProperty(name="Pool", default="Pool")
+    name: StringProperty(name="Pool", default="Pool", update=update_pool_name)
+    prev_name: StringProperty(default="")
     materials: CollectionProperty(type=SDG_PoolMaterial)
     material_index: IntProperty(default=0)
 
+
+class SDG_MaterialRule(bpy.types.PropertyGroup):
+    target_type: EnumProperty(name="Target", items=TARGET_ITEMS, default='CLASS')
+    target_class: PointerProperty(name="Class", type=bpy.types.Collection, poll=poll_class_collection)
+    target_collection: PointerProperty(name="Collection", type=bpy.types.Collection)
+    target_object: PointerProperty(name="Object", type=bpy.types.Object)
+    pool_name: StringProperty(name="Pool")
+    slot_mode: EnumProperty(name="Slot", items=SLOT_ITEMS, default='FIRST')
+    chance: FloatProperty(
+        name="Chance", default=100.0, min=0.0, max=100.0, subtype='PERCENTAGE',
+        description="Share of the targeted objects that get a new material",
+    )
 
 def update_add_material(self, context):
     if self.add_material is None:
@@ -124,8 +165,10 @@ class SDG_Settings(bpy.types.PropertyGroup):
         items=ROTATION_ITEMS,
         default='ANY',
     ) # type: ignore
-    scale_min: FloatProperty(name="Min", default=0.8, min=0.01)
-    scale_max: FloatProperty(name="Max", default=1.2, min=0.01)
+    rules: CollectionProperty(type=SDG_MaterialRule)
+    rule_index: IntProperty(default=0)
+    scale_min: FloatProperty(name="Scale Min", default=0.8, min=0.01)
+    scale_max: FloatProperty(name="Scale Max", default=1.2, min=0.01)
     num_images: IntProperty(name="Images", default=500, min=1, max=100000)
     seed: IntProperty(
         name="Seed", default=42, min=0,
@@ -277,6 +320,7 @@ classes = (
     SDG_LightEntry,
     SDG_PoolMaterial,
     SDG_Pool,
+    SDG_MaterialRule,
     SDG_Settings,
     
 )

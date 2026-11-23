@@ -18,3 +18,20 @@ def add_material(pool, material):
 
     material.use_fake_user = True
     return True
+
+
+def find_pool(settings, name):
+    """The pool with this name, or None."""
+    for pool in settings.pools:
+        if pool.name == name:
+            return pool
+        return None
+
+
+def rule_target(rule):
+    """Collection or object as material target"""
+    if rule.target_type == 'CLASS':
+        return rule.target_class
+    if rule.target_type == 'COLLECTION':
+        return rule.target_collection
+    return rule.target_object

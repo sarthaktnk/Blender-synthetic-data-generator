@@ -2,6 +2,7 @@ import bpy
 import json
 from .stats import balance_ratio
 from .checks import get_problems
+from .pools import rule_target
 
 class SDG_UL_classes(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
@@ -154,23 +155,68 @@ class SDG_PT_materials(SDG_PanelBase, bpy.types.Panel):
         row.operator("sdg.pool_add", icon='ADD')
         row.operator("sdg.pool_remove", icon='REMOVE')
 
-        if not settings.pools:
+        if settings.pools:
+            pool = settings.pools[settings.pool_index]
+            layout.label(text=f"Materials in '{pool.name}'")
+            rows = max(2, min(len(pool.materials), 6))
+            layout.template_list(
+                "SDG_UL_pool_materials", "",
+                pool, "materials",
+                pool, "material_index",
+                rows=rows,
+            )
+            row = layout.row(align=True)
+            row.prop(settings, "add_material", text="Add")
+            row.operator("sdg.pool_material_remove", text="", icon='REMOVE')
+        else:
             layout.label(text="No pools yet. Add one to begin.")
-            return
 
-        pool = settings.pools[settings.pool_index]
+
+        # ---- Rules ----
         layout.separator()
-        layout.label(text=f"Materials in '{pool.name}'")
-        rows = max(2, min(len(pool.materials), 6))
+        layout.label(text="Rules")
+        rows = max(2, min(len(settings.rules), 5))
         layout.template_list(
-            "SDG_UL_pool_materials", "",
-            pool, "materials",
-            pool, "material_index",
+            "SDG_UL_rules", "",
+            settings, "rules",
+            settings, "rule_index",
             rows=rows,
         )
         row = layout.row(align=True)
-        row.prop(settings, "add_material", text="Add")
-        row.operator("sdg.pool_material_remove", text="", icon='REMOVE')
+        row.operator("sdg.rule_add", icon='ADD')
+        row.operator("sdg.rule_remove", icon='REMOVE')
+
+        if not settings.rules:
+            layout.label(text="No Rules: No change in Materials")
+            return
+
+        rule = settings.rules[settings.rule_index]
+        layout.separator()
+        layout.prop(rule, "target_type", text="Target")
+
+        if rule.target_type == 'CLASS':
+            layout.prop(rule, "target_class", text="class")
+        elif rule.target_type == 'COLLECTION':
+            layout.prop(rule, "target_collection", text="Collection")
+        else:
+            layout.prop(rule, "target_object", text="Object")
+
+        layout.prop_search(rule, "pool_name", settings, "pools", text="Pool")
+        layout.prop(rule, "slot_mode", text="Slot")
+        layout.prop(rule, "chance", slider=True)
+
+
+class SDG_UL_rules(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+
+        target = rule_target(item)
+        row = layout.row(align=True)
+        if target is None:
+            row.Label(text="(no target)", icon='ERROR')
+        else:
+            row.label(text=target.name, icon='MATERIAL')
+        row.label(text=item.target_type.title())
+        row.label(text=item.pool_name or "?")
 
 
 class SDG_PT_lights(SDG_PanelBase, bpy.types.Panel):
@@ -359,6 +405,7 @@ classes = (
     SDG_UL_lights,
     SDG_UL_pools,
     SDG_UL_pool_materials,
+    SDG_UL_rules,
     SDG_PT_setup,
     SDG_PT_placement,
     SDG_PT_materials,
