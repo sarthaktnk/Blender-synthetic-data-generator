@@ -1,11 +1,13 @@
 import bpy
 from math import pi, hypot
 from .rng import make_rng
+from .physics import settle
 
 SPAWN_COLLECTION = "SDG_Spawned"
 MAX_TRIES = 50
 HIDDEN_MARK = "sdg_preview_hidden"
 RENDER_MARK = "sdg_render_hidden"
+MAX_LAYERS = 6
 
 
 def clear_spawned():
@@ -81,6 +83,24 @@ def find_position(rng, placed, radius, area_length, area_width, spacing):
     return None
 
 
+def find_start(rng, layers, radius, area_l, area_w, settings, max_radius):
+
+    length = max(0.01, min(area_l, settings.area_length) - 2 * radius)
+    width = max(0.01, min(area_w, settings.area_width) -2 * radius)
+
+    for layer in range(MAX_LAYERS):
+        while len(layers) <= layer:
+            layers.append([])
+
+        position = find_position(rng, layers[layer], radius, length, width, 0.0)
+        if position is not None:
+            x, y = position
+            layers[layer].append((x, y, radius))
+            z = (settings.ground_height + settings.drop_height + layer * (2 * max_radius + 0.02) + radius)
+            return x, y, z
+    return None
+
+
 def spawn_instances(context, settings, image_index):
     """Create the instances for ONE image.
     Returns (spawned objects, number that did not fit)."""
@@ -131,7 +151,16 @@ def spawn_instances(context, settings, image_index):
     rng.shuffle(optional)
     ordered = required + optional
 
-    # ---- Phase-3: placing objects 
+    # ---- Phase-3: placing objects
+
+    physics = settings.use_placement and settings.placement_mode == 'PHYSICS'
+    layers = []
+
+    max_radius = max(
+        (max(r["template"].dimensions) * r["factor"] / 2 for r in ordered),
+        default=0.0,
+    )
+
     spawned = []
     placed = []
     failed = 0
@@ -155,18 +184,27 @@ def spawn_instances(context, settings, image_index):
             obj.rotation_euler = req["rotation"]
 
             radius = max(obj.dimensions) / 2
-            position = find_position(rng, placed, radius, req["area_l"], req["area_w"], settings.spacing,)
+            if physics:
+                position = find_start(rng, layers, radius, req["area_l"], req["area_w"], settings, max_radius)
+            else:
+                position = find_position(rng, placed, radius, req["area_l"], req["area_w"], settings.spacing)
 
             if position is None:
                 bpy.data.objects.remove(obj)
                 failed += 1
                 continue
 
-            x, y = position
-            obj.location = (x, y, template.location.z)
-            placed.append((x, y, radius))
+            if physics:
+                obj.location = position
+            else:
+                x, y = position
+                obj.location = (x, y, template.location.z)
+                placed.append((x, y, radius))
 
         holder.objects.link(obj)
         spawned.append(obj)
+
+    if physics and spawned:
+        settle(context, settings, spawned)
 
     return spawned, failed
