@@ -25,7 +25,7 @@ def find_pool(settings, name):
     for pool in settings.pools:
         if pool.name == name:
             return pool
-        return None
+    return None
 
 
 def rule_target(rule):

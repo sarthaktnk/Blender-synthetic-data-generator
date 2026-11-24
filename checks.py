@@ -20,7 +20,7 @@ def get_problems(settings):
     else:
         for entry in settings.class_list:
             if entry.collection is None or len(entry.collection.all_objects) == 0:
-                blocking.append(f"class '{entry.name}' is empty")
+                blocking.append(f"Class '{entry.name}' is empty")
             if entry.count_min > entry.count_max:
                 blocking.append(f"Class '{entry.name}': Min is above Max")
             if (settings.use_placement and entry.use_override and entry.scale_min > entry.scale_max):
@@ -105,19 +105,28 @@ def get_problems(settings):
                 once(blocking, "A material rule has no target")
                 continue
 
-            if rule.target_type == 'CLASS':
-                bare = [o for o in target.objects if o.type == 'MESH' and len(o.material_slots) == 0]
-
-                if bare:
-                    once(warnings, f"'{label}': {len(bare)} object(s) have no material slot")
-
             label = target.name
+
+            if rule.target_type == 'OBJECT':
+                candidates = [target]
+            elif rule.target_type == 'COLLECTION':
+                candidates = list(target.all_objects)
+            else:
+                candidates = list(target.objects)
+            bare = [o for o in candidates if o.type == 'MESH' and len(o.material_slots) == 0]
+
+            if bare:
+                once(warnings, f"'{label}': {len(bare)} object(s) have no material slot")
+
             if rule.target_type == 'CLASS' and target not in class_collections:
                 once(blocking, f"Rule '{label}': not a class any more")
 
             pool = find_pool(settings, rule.pool_name)
             if pool is None:
-                once(blocking, f"Rule '{label}': pick a pool")
+                if rule.pool_name:
+                    once(blocking, f"Rule '{label}': pool '{rule.pool_name}' not found")
+                else:
+                    once(blocking, f"Rule '{label}': pick a pool")
             elif len(pool.materials) == 0:
                 once(blocking, f"Pool '{pool.name}' is empty")
             else:

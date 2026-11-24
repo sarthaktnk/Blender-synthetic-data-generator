@@ -1,7 +1,7 @@
 from .spawn import spawn_instances, hide_originals, restore_originals, clear_spawned
 from .lights import randomize_lights, restore_lights
 from .camera import randomize_camera, restore_camera
-from .materials import apply_material_rules
+from .materials import apply_material_rules, restore_materials
 
 def apply_scene(context, settings, image_index):
     """Build the scene for ONE image. Returns (spawned, failed, lights_changed)."""
@@ -19,3 +19,4 @@ def reset_scene():
     restore_originals()
     restore_lights()
     restore_camera()
+    restore_materials()
