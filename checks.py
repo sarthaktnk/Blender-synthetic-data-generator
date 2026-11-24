@@ -105,6 +105,12 @@ def get_problems(settings):
                 once(blocking, "A material rule has no target")
                 continue
 
+            if rule.target_type == 'CLASS':
+                bare = [o for o in target.objects if o.type == 'MESH' and len(o.material_slots) == 0]
+
+                if bare:
+                    once(warnings, f"'{label}': {len(bare)} object(s) have no material slot")
+
             label = target.name
             if rule.target_type == 'CLASS' and target not in class_collections:
                 once(blocking, f"Rule '{label}': not a class any more")
