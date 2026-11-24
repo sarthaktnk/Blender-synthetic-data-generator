@@ -97,19 +97,40 @@ class SDG_PT_placement(SDG_PanelBase, bpy.types.Panel):
         layout.active = settings.use_placement
         layout.label(text="Defaults for all classes")
 
+        layout.row().prop(settings, "placement_mode", expand=True)
+        physics = settings.placement_mode == 'PHYSICS'
+
+        layout.label(text="Defaults for all classes")
+
         row = layout.row(align=True)
         row.prop(settings, "area_length")
         row.prop(settings, "area_width")
 
-        layout.prop(settings, "spacing", slider=True)
-        layout.prop(settings, "rotation_mode")
+        if not physics:
+            layout.prop(settings, "spacing", slider=True)
+
+        layout.prop(settings, "rotation_mode",
+                    text="Start rotation" if physics else "Rotation")
 
         row = layout.row(align=True)
         row.prop(settings, "scale_min")
         row.prop(settings, "scale_max")
 
+        if physics:
+            box = layout.box()
+            box.label(text="Physics", icon='PHYSICS')
+            box.prop(settings, "ground_height")
+            box.prop(settings, "drop_height")
+            box.prop(settings, "sim_frames")
+            row = box.row(align=True)
+            row.prop(settings, "friction")
+            row.prop(settings, "bounciness")
+            box.prop(settings, 'use_walls')
+
         layout.separator()
         layout.label(text="Class overrrides")
+        if physics:
+            layout.label(text="In Physics, an override area is where the class starts.")
         layout.template_list(
             "SDG_UL_overrides", "",
             settings, "class_list",

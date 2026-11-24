@@ -75,8 +75,6 @@ def apply_material_rules(settings, spawned, image_index):
     Returns how many objects got a new material."""
 
     restore_materials()
-    
-    print("spawned:", len(spawned), sorted({o.get("sdg_class_id") for o in spawned}))
 
     if not settings.use_materials:
         return 0
@@ -86,9 +84,7 @@ def apply_material_rules(settings, spawned, image_index):
     for rule_index, rule in enumerate(settings.rules):
         pool = find_pool(settings, rule.pool_name)
         materials = [item.material for item in pool.materials if item.material] if pool else []
-        print("  rule class id:", class_id_of(settings, rule.target_class) if rule.target_type == 'CLASS' else "-")
         objects = rule_objects(settings, rule, spawned)
-        print(f"rule {rule_index}: {rule.target_type}, {len(materials)} material(s), {len(objects)} object(s)")
         if not materials or not objects:
             continue
 

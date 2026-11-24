@@ -26,6 +26,11 @@ SLOT_ITEMS = [
     ('ALL', "All", "Every material slot")
 ]
 
+PLACEMENT_MODES = [
+    ('SCATTER', "Scatter", "Random positions on a flat area"),
+    ('PHYSICS', "Physics", "Drop the objects and let them settle naturally"),
+]
+
 
 def poll_camera(self, obj):
     return obj.type == 'CAMERA'
@@ -165,6 +170,38 @@ class SDG_Settings(bpy.types.PropertyGroup):
         items=ROTATION_ITEMS,
         default='ANY',
     ) # type: ignore
+
+    placement_mode: EnumProperty(
+        name="Mode", items=PLACEMENT_MODES, default='SCATTER',
+    )
+    # --- Physics ---
+    ground_height: FloatProperty(
+        name="Ground height", default=0.0,
+        subtype='DISTANCE', unit='LENGTH',
+        description="Height of the invisible ground the objects land on",
+    )
+    drop_height: FloatProperty(
+        name="drop height", default=0.5, min=0.05,
+        subtype='DISTANCE', unit='LENGTH',
+        description="Objects start between a little above the ground and this height",
+    )
+    sim_frames: IntProperty(
+        name="Settle frames", default=100, min=10, max=600,
+        description="Simulation frames to run"
+    )
+    friction: FloatProperty(
+        name="Friction", default=0.5, min=0.0, max=1.0,
+        description="How much objects resist sliding",
+    )
+    bounciness: FloatProperty(
+        name="Bounce", default=0.1, min=0.0, max=1.0,
+        description="How much objects bounce when they land",
+    )
+    use_walls: BoolProperty(
+        name="Walls", default=True,
+        description="Invisible walls around the area keep objects from rolling out",
+    )
+
     rules: CollectionProperty(type=SDG_MaterialRule)
     rule_index: IntProperty(default=0)
     scale_min: FloatProperty(name="Scale Min", default=0.8, min=0.01)

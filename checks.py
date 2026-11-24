@@ -139,4 +139,21 @@ def get_problems(settings):
                 once(warnings, f"Two rules target '{label}'")
             seen.append(target)
 
+    # --- Physics ---
+    if settings.use_placement and settings.placement_mode == 'PHYSICS':
+        for entry in settings.class_list:
+            if entry.collection is None:
+                continue
+
+            if any(o.type != 'MESH' for o in entry.collection.objects):
+                once(blocking, f"Class '{entry.name}': physics needs mesh objects")
+
+        sizes = [
+            max(o.dimensions)
+            for entry in settings.class_list if entry.collection
+            for o in entry.collection.objects if o.type == 'MESH'
+        ]
+        if sizes and max(sizes) > settings.drop_height:
+            once(warnings, "Drop height is smaller than your largest object")
+
     return blocking, warnings
