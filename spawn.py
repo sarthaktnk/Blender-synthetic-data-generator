@@ -1,7 +1,7 @@
 import bpy
 from math import pi, hypot
 from .rng import make_rng
-from .physics import settle
+from .physics import settle, drop_stray
 
 SPAWN_COLLECTION = "SDG_Spawned"
 MAX_TRIES = 50
@@ -206,5 +206,7 @@ def spawn_instances(context, settings, image_index):
 
     if physics and spawned:
         settle(context, settings, spawned)
+        spawned, lost = drop_stray(settings, spawned)
+        failed += lost
 
     return spawned, failed

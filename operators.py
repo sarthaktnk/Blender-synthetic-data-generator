@@ -161,7 +161,8 @@ class SDG_OT_preview(bpy.types.Operator):
 
         message = f"Image {image}: {len(spawned)} object(s), {lights_changed} light(s)"
         if failed:
-            message += f", {failed} did not fit"
+            where = "left the area" if settings.placement_mode == 'PHYSICS' else "did not fit"
+            message += f", {failed} {where}"
         self.report({'WARNING' if failed else 'INFO'}, message)
         return {'FINISHED'}
 

@@ -2,6 +2,7 @@ import bpy
 
 TEMP = "SDG_Physics"
 WALL = 0.2
+TOLERANCE = 0.05
 
 BOX_FACES = [(0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1),
              (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3)]
@@ -139,3 +140,22 @@ def settle(context, settings, objects):
             except ReferenceError:
                 pass
         view_layer.objects.active = saved_active
+
+
+def drop_stray(settings, objects):
+    """Remove objects outside the area or below the ground."""
+    half_x = settings.area_length / 2 + TOLERANCE
+    half_y = settings.area_width / 2 + TOLERANCE
+    floor = settings.ground_height - TOLERANCE
+
+    kept = []
+    removed = 0
+    for obj in objects:
+        p = obj.matrix_world.translation
+        stray = abs(p.x) > half_x or abs(p.y) > half_y or p.z < floor
+        if stray:
+            bpy.data.objects.remove(obj, do_unlink=True)
+            removed += 1
+        else:
+            kept.append(obj)
+    return kept, removed
